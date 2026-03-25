@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/nf-core/hapfun/master/nextflow_schema.json",
+  "title": "HapFun pipeline parameters",
+  "description": "Haploid Fungal SNP Calling Pipeline",
+  "type": "object",
+  "definitions": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "properties": {
+        "input": { "type": "string", "default": "assets/samplesheet.csv" },
+        "outdir": { "type": "string", "default": "results" },
+        "ref": { "type": "string", "default": "data/ref.fa" }
+      },
+      "required": ["input", "ref"]
+    },
+    "tool_options": {
+      "title": "Tool Selection",
+      "type": "object",
+      "properties": {
+        "trimmer": { "type": "string", "enum": ["trimmomatic", "fastp"], "default": "fastp" },
+        "aligner": { "type": "string", "enum": ["bwa-mem2", "bowtie2"], "default": "bwa-mem2" },
+        "caller": { "type": "string", "enum": ["gatk", "freebayes"], "default": "freebayes" },
+        "freebayes_mode": { "type": "string", "enum": ["individual", "population"], "default": "population" }
+      }
+    },
+    "filtering_options": {
+      "title": "VCF Filtering Options",
+      "type": "object",
+      "properties": {
+        "filter_qual": { "type": "integer", "default": 30 },
+        "filter_min_dp": { "type": "integer", "default": 10 },
+        "filter_max_dp": { "type": "integer", "default": 100000 },
+        "filter_ind_dp": { "type": "integer", "default": 7 }
+      }
+    },
+    "pipeline_logic": {
+      "title": "Pipeline Logic",
+      "type": "object",
+      "properties": {
+        "error_estimate": { "type": "boolean", "default": false }
+      }
+    }
+  },
+  "allOf": [
+    { "$ref": "#/definitions/input_output_options" },
+    { "$ref": "#/definitions/tool_options" },
+    { "$ref": "#/definitions/filtering_options" },
+    { "$ref": "#/definitions/pipeline_logic" }
+  ]
+}
