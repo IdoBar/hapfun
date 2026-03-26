@@ -25,3 +25,31 @@ process MARK_DUPLICATES {
     gatk MarkDuplicates -I $bam -O ${meta.id}.dedup.bam -M ${meta.id}.metrics.txt --CREATE_INDEX true
     """
 }
+
+process QUALIMAP {
+    tag "$meta.id"
+    label 'process_medium'
+    conda "bioconda::qualimap=2.2.2d"
+    container 'quay.io/biocontainers/qualimap:2.2.2d--1'
+
+    input:
+    tuple val(meta), path(bam), path(bai)
+    path bed // Optional annotation file
+
+    output:
+    // Standardized nf-core tuple output, emitting the whole directory
+    tuple val(meta), path("${meta.id}_qualimap"), emit: results 
+
+    script:
+    // Only append the flag if a bed file was actually staged
+    def feature_arg = bed.name != 'NO_FILE' ? "-gff $bed" : ""
+    
+    """
+    unset DISPLAY
+    qualimap bamqc \\
+        -bam $bam \\
+        $feature_arg \\
+        -outdir ${meta.id}_qualimap \\
+        --java-mem-size=4G
+    """
+}

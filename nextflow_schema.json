@@ -20,6 +20,8 @@
       "type": "object",
       "properties": {
         "trimmer": { "type": "string", "enum": ["trimmomatic", "fastp"], "default": "fastp" },
+        "trimmomatic_args": { "type": "string",
+          "default": "ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"},
         "aligner": { "type": "string", "enum": ["bwa-mem2", "bowtie2"], "default": "bwa-mem2" },
         "caller": { "type": "string", "enum": ["gatk", "freebayes"], "default": "freebayes" },
         "freebayes_mode": { "type": "string", "enum": ["individual", "population"], "default": "population" }
