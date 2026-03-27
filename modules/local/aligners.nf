@@ -7,7 +7,7 @@ process BWA_ALIGN {
     container 'quay.io/biocontainers/bwa-mem2:2.3--he70b90d_0'
     
     input:
-        tuple val(meta), path(reads)
+        tuple val(meta), path(read1), path(read2)
         path index_dir
         val prefix
         
@@ -16,7 +16,7 @@ process BWA_ALIGN {
     script:
     def args = task.ext.args ?: ''
     """
-    bwa-mem2 mem -t ${task.cpus} $args ${index_dir}/${prefix} ${reads[0]} ${reads[1]} > ${meta.id}_${meta.library}.sam
+    bwa-mem2 mem -t ${task.cpus} $args ${index_dir}/${prefix} $read1 $read2 > ${meta.id}_${meta.library}.sam
     """
 }
 
@@ -27,7 +27,7 @@ process BOWTIE2_ALIGN {
     container 'quay.io/biocontainers/bowtie2:2.5.5--ha27dd3b_0'
 
     input:
-        tuple val(meta), path(reads)
+        tuple val(meta), path(read1), path(read2)
         path index_dir
         val prefix
 
@@ -36,7 +36,7 @@ process BOWTIE2_ALIGN {
     script:
     def args = task.ext.args ?: ''
     """
-    bowtie2 -x ${index_dir}/${prefix} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} $args > ${meta.id}_${meta.library}.sam
+    bowtie2 -x ${index_dir}/${prefix} -1 $read1 -2 $read2 -p ${task.cpus} $args > ${meta.id}_${meta.library}.sam
     """
 }
 

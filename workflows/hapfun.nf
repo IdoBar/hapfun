@@ -30,7 +30,7 @@ workflow HAPFUN {
     // 1. INPUT PARSING
     ch_input = Channel.fromPath(params.input).splitCsv(header:true).map { row -> 
         def meta = [ id: row.sample, library: row.library, single_end: false ]
-        tuple(meta, [file(row.fq1), file(row.fq2)]) 
+        tuple(meta, file(row.fq1), file(row.fq2)) 
     }
     
     ch_ref = file(params.ref)

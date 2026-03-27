@@ -6,7 +6,8 @@ process FASTP {
     conda "bioconda::fastp=1.3.0"
     container 'quay.io/biocontainers/fastp:1.3.0--h43da1c4_0'
     
-    input: tuple val(meta), path(reads)
+    input:
+        tuple val(meta), path(read1), path(read2)
     output:
         tuple val(meta), path("*_1.fastp.fq.gz"), path("*_2.fastp.fq.gz"), emit: trimmed_reads
         path "*.json", emit: json 
@@ -14,7 +15,7 @@ process FASTP {
     script:
     def args = task.ext.args ?: ''
     """
-    fastp --in1 ${reads[0]} --in2 ${reads[1]} --out1 ${meta.id}_${meta.library}_1.fastp.fq.gz --out2 ${meta.id}_${meta.library}_2.fastp.fq.gz --json ${meta.id}_${meta.library}.fastp.json --html ${meta.id}_${meta.library}.fastp.html --thread ${task.cpus} $args
+    fastp --in1 $read1 --in2 $read2 --out1 ${meta.id}_${meta.library}_1.fastp.fq.gz --out2 ${meta.id}_${meta.library}_2.fastp.fq.gz --json ${meta.id}_${meta.library}.fastp.json --html ${meta.id}_${meta.library}.fastp.html --thread ${task.cpus} $args
     """
 }
 
@@ -24,12 +25,13 @@ process FASTQC {
     conda "bioconda::fastqc=0.12.1"
     container 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'
     
-    input: tuple val(meta), path(reads)
+    input:
+        tuple val(meta), path(read1), path(read2)
     output: path "*.{html,zip}", emit: results
     
     script:
     """
-    fastqc -t ${task.cpus} -q ${reads[0]} ${reads[1]}
+    fastqc -t ${task.cpus} -q $read1 $read2
     """
 }
 
@@ -39,7 +41,8 @@ process TRIMMOMATIC {
     conda "bioconda::trimmomatic=0.40"
     container 'quay.io/biocontainers/trimmomatic:0.40--hdfd78af_0'
     
-    input: tuple val(meta), path(reads)
+    input:
+        tuple val(meta), path(read1), path(read2)
     output:
         tuple val(meta), path("*_1.paired.fq.gz"), path("*_2.paired.fq.gz"), emit: trimmed_reads
         path "*.trim.log", emit: log 
@@ -48,7 +51,7 @@ process TRIMMOMATIC {
     def args = task.ext.args ?: ''
     """
     trimmomatic PE -threads ${task.cpus} \\
-    ${reads[0]} ${reads[1]} \\
+    $read1 $read2 \
     ${meta.id}_${meta.library}_1.paired.fq.gz ${meta.id}_${meta.library}_1.unpaired.fq.gz \\
     ${meta.id}_${meta.library}_2.paired.fq.gz ${meta.id}_${meta.library}_2.unpaired.fq.gz \\
     $args \\
