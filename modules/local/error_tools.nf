@@ -3,8 +3,8 @@
 process MARK_DUPLICATES_LIB {
     tag "${meta.id}_${meta.library}"
     label 'process_medium'
-    conda "bioconda::gatk4=4.2.6.1"
-    container 'broadinstitute/gatk:4.2.6.1'
+    conda "bioconda::gatk4=4.6.2.0"
+    container 'broadinstitute/gatk:4.6.2.0'
 
     input:
     tuple val(meta), path(bam)
@@ -26,8 +26,8 @@ process MARK_DUPLICATES_LIB {
 process GATK_CALL_LIB {
     tag "${meta.id}_${meta.library}"
     label 'process_medium'
-    conda "bioconda::gatk4=4.2.6.1"
-    container 'broadinstitute/gatk:4.2.6.1'
+    conda "bioconda::gatk4=4.6.2.0"
+    container 'broadinstitute/gatk:4.6.2.0'
 
     input:
     tuple val(meta), path(bam), path(bai)
@@ -51,8 +51,8 @@ process GATK_CALL_LIB {
 process FREEBAYES_CALL_LIB {
     tag "${meta.id}_${meta.library}"
     label 'process_medium'
-    conda "bioconda::freebayes=1.3.5 bioconda::bcftools=1.15"
-    container 'quay.io/biocontainers/freebayes:1.3.5--py36hc088bd4_0'
+    conda "bioconda::freebayes=1.3.10"
+    container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
 
     input:
     tuple val(meta), path(bam), path(bai)
@@ -60,12 +60,12 @@ process FREEBAYES_CALL_LIB {
     path ref_idx
 
     output:
-    tuple val(meta), path("*.vcf.gz"), path("*.vcf.gz.csi"), emit: vcf
+    tuple val(meta), path("*.vcf.gz"), path("*.vcf.gz.tbi"), emit: vcf
 
     script:
     """
     freebayes -f $ref -p ${params.ploidy} $bam | bgzip > ${meta.id}_${meta.library}.vcf.gz
-    bcftools index ${meta.id}_${meta.library}.vcf.gz
+    tabix ${meta.id}_${meta.library}.vcf.gz
     """
 }
 
@@ -73,7 +73,7 @@ process VCF_MULTI_COMPARE {
     tag "$meta.id"
     label 'process_low'
     conda "conda-forge::python=3.9 conda-forge::pandas=1.4.2 bioconda::pysam=0.19.1"
-    container 'quay.io/biocontainers/mulled-v2-57736af1eb98c01010848572c9fec9e2100823a9:0d650df444747d6928e4695027581b0a56f6259d-0'
+    container 'quay.io/biocontainers/mulled-v2-629aec3ba267b06a1efc3ec454c0f09e134f6ee2:3b083bb5eae6e491b8579589b070fa29afbea2a1-0'
 
     input:
     tuple val(meta), path(vcfs), path(indexes)

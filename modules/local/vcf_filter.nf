@@ -1,8 +1,8 @@
 process VCF_FILTER {
     tag "$meta.id"
     label 'process_medium'
-    conda "bioconda::bcftools=1.15"
-    container 'quay.io/biocontainers/bcftools:1.15--h0ea216a_2'
+    conda "bioconda::bcftools=1.23.1"
+    container 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'
     input: tuple val(meta), path(vcf)
     output:
         tuple val(meta), path("${meta.id}.Q${params.filter_qual}.poly.vcf.gz"), emit: filtered_vcf

@@ -2,8 +2,8 @@
 
 process MULTIQC {
     label 'process_low'
-    conda "bioconda::multiqc=1.19"
-    container 'quay.io/biocontainers/multiqc:1.19--pyhdfd78af_0'
+    conda "bioconda::multiqc=1.33"
+    container 'quay.io/biocontainers/multiqc:1.33--pyhdfd78af_0'
 
     input: 
     path multiqc_files

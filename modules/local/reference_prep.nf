@@ -3,8 +3,8 @@
 process SAMTOOLS_FAIDX {
     tag "$fasta"
     label 'process_low'
-    conda "bioconda::samtools=1.15"
-    container 'quay.io/biocontainers/samtools:1.15--h3843585_0'
+    conda "bioconda::samtools=1.23.1"
+    container 'quay.io/biocontainers/samtools:1.23.1--ha83d96e_0'
 
     input:
     path fasta
@@ -21,8 +21,8 @@ process SAMTOOLS_FAIDX {
 process GATK_DICTIONARY {
     tag "$fasta"
     label 'process_low'
-    conda "bioconda::gatk4=4.2.6.1"
-    container 'broadinstitute/gatk:4.2.6.1'
+    conda "bioconda::gatk4=4.6.2.0"
+    container 'broadinstitute/gatk:4.6.2.0'
 
     input:
     path fasta
@@ -42,8 +42,8 @@ process GATK_DICTIONARY {
 process BWA_INDEX {
     tag "$fasta"
     label 'process_high'
-    conda "bioconda::bwa-mem2=2.2.1"
-    container 'quay.io/biocontainers/bwa-mem2:2.2.1--he513fc3_0'
+    conda "bioconda::bwa-mem2=2.3"
+    container 'quay.io/biocontainers/bwa-mem2:2.3--he70b90d_0'
 
     input: path fasta
     output: path "bwa_index", emit: index
@@ -60,8 +60,8 @@ process BWA_INDEX {
 process BOWTIE2_INDEX {
     tag "$fasta"
     label 'process_high'
-    conda "bioconda::bowtie2=2.4.4"
-    container 'quay.io/biocontainers/bowtie2:2.4.4--py39hbb4e92a_0'
+    conda "bioconda::bowtie2=2.5.5"
+    container 'quay.io/biocontainers/bowtie2:2.5.5--ha27dd3b_0'
 
     input: path fasta
     output: path "bowtie2_index", emit: index

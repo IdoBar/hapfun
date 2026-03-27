@@ -3,8 +3,8 @@
 process FASTP {
     tag "$meta.id"
     label 'process_medium'
-    conda "bioconda::fastp=0.23.4"
-    container 'quay.io/biocontainers/fastp:0.23.4--hadf994f_2'
+    conda "bioconda::fastp=1.3.0"
+    container 'quay.io/biocontainers/fastp:1.3.0--h43da1c4_0'
     
     input: tuple val(meta), path(reads)
     output:
@@ -21,8 +21,8 @@ process FASTP {
 process FASTQC {
     tag "$meta.id"
     label 'process_medium'
-    conda "bioconda::fastqc=0.11.9"
-    container 'quay.io/biocontainers/fastqc:0.11.9--0'
+    conda "bioconda::fastqc=0.12.1"
+    container 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'
     
     input: tuple val(meta), path(reads)
     output: path "*.{html,zip}", emit: results
@@ -36,8 +36,8 @@ process FASTQC {
 process TRIMMOMATIC {
     tag "$meta.id"
     label 'process_medium'
-    conda "bioconda::trimmomatic=0.39"
-    container 'quay.io/biocontainers/trimmomatic:0.39--1'
+    conda "bioconda::trimmomatic=0.40"
+    container 'quay.io/biocontainers/trimmomatic:0.40--hdfd78af_0'
     
     input: tuple val(meta), path(reads)
     output:

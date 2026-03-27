@@ -1,27 +1,27 @@
 process FREEBAYES {
     tag "$meta.id"
     label 'process_medium'
-    conda "bioconda::freebayes=1.3.5 bioconda::bcftools=1.15"
-    container 'quay.io/biocontainers/freebayes:1.3.5--py36hc088bd4_0'
+    conda "bioconda::freebayes=1.3.10"
+    container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
         tuple val(meta), path(bam), path(bai)
         path ref
         path ref_idx
     output:
         path "${meta.id}.vcf.gz", emit: vcf
-        path "${meta.id}.vcf.gz.csi", emit: csi
+        path "${meta.id}.vcf.gz.tbi", emit: tbi
     script:
     def args = task.ext.args ?: ''
     """
     freebayes -f $ref -p ${params.ploidy} $args $bam | bgzip > ${meta.id}.vcf.gz
-    bcftools index ${meta.id}.vcf.gz
+    tabix ${meta.id}.vcf.gz
     """
 }
 
 process FREEBAYES_POPULATION {
     label 'process_high'
-    conda "bioconda::freebayes=1.3.5 bioconda::bcftools=1.15"
-    container 'quay.io/biocontainers/freebayes:1.3.5--py36hc088bd4_0'
+    conda "bioconda::freebayes=1.3.10"
+    container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
         path bams
         path bais
@@ -38,8 +38,8 @@ process FREEBAYES_POPULATION {
 process GATK_HAPLOTYPECALLER {
     tag "$meta.id"
     label 'process_medium'
-    conda "bioconda::gatk4=4.2.6.1"
-    container 'broadinstitute/gatk:4.2.6.1'
+    conda "bioconda::gatk4=4.6.2.0"
+    container 'broadinstitute/gatk:4.6.2.0'
 
     input:
     tuple val(meta), path(bam), path(bai)
@@ -65,8 +65,8 @@ process GATK_HAPLOTYPECALLER {
 
 process GATK_COMBINEGVCFS {
     label 'process_medium'
-    conda "bioconda::gatk4=4.2.6.1"
-    container 'broadinstitute/gatk:4.2.6.1'
+    conda "bioconda::gatk4=4.6.2.0"
+    container 'broadinstitute/gatk:4.6.2.0'
 
     input:
     path gvcfs
@@ -92,8 +92,8 @@ process GATK_COMBINEGVCFS {
 
 process GATK_GENOTYPEGVCFS {
     label 'process_medium'
-    conda "bioconda::gatk4=4.2.6.1"
-    container 'broadinstitute/gatk:4.2.6.1'
+    conda "bioconda::gatk4=4.6.2.0"
+    container 'broadinstitute/gatk:4.6.2.0'
 
     input:
     path gvcf

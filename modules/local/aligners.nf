@@ -3,8 +3,8 @@
 process BWA_ALIGN {
     tag "$meta.id"
     label 'process_high'
-    conda "bioconda::bwa-mem2=2.2.1 bioconda::samtools=1.15"
-    container 'quay.io/biocontainers/bwa-mem2:2.2.1--he513fc3_0'
+    conda "bioconda::bwa-mem2=2.3 bioconda::samtools=1.23.1"
+    container 'quay.io/biocontainers/bwa-mem2:2.3--he70b90d_0'
     
     input:
         tuple val(meta), path(reads)
@@ -24,8 +24,8 @@ process BWA_ALIGN {
 process BOWTIE2_ALIGN {
     tag "$meta.id"
     label 'process_high'
-    conda "bioconda::bowtie2=2.4.4 bioconda::samtools=1.15"
-    container 'quay.io/biocontainers/bowtie2:2.4.4--py39hbb4e92a_0'
+    conda "bioconda::bowtie2=2.5.5 bioconda::samtools=1.23.1"
+    container 'quay.io/biocontainers/bowtie2:2.5.5--ha27dd3b_0'
 
     input:
         tuple val(meta), path(reads)

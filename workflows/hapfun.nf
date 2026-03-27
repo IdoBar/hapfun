@@ -181,7 +181,7 @@ workflow HAPFUN {
     } else {
         // Fallback: Individual Freebayes calling & standard merging
         FREEBAYES(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai)
-        BCFTOOLS_MERGE(FREEBAYES.out.vcf.collect(), FREEBAYES.out.csi.collect())
+        BCFTOOLS_MERGE(FREEBAYES.out.vcf.collect(), FREEBAYES.out.tbi.collect())
         ch_final_vcf = BCFTOOLS_MERGE.out.vcf.map { vcf -> tuple([id: "merged"], vcf) }
     }
 
