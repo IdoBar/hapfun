@@ -83,12 +83,11 @@ process VCF_MULTI_COMPARE {
     output:
     path "${meta.id}_${compare_label}_discordance.csv", emit: report
 
-    def vcf_args = vcfs.collect { "'${it}'" }.join(' ')
-
     script:
+    def vcf_args = vcfs.collect { "'${it}'" }.join(' ')
     """
     python $compare_script \\
-        --vcfs ${vcf_args} \
+        --vcfs ${vcf_args} \\
         --sample ${meta.id} \\
         --out ${meta.id}_${compare_label}_discordance.csv
     """
