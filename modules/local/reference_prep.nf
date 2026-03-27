@@ -1,5 +1,23 @@
 // Save as: modules/local/reference_prep.nf
 
+process DECOMPRESS_FASTA {
+    tag "$fasta"
+    label 'process_low'
+    conda "bioconda::samtools=1.23.1"
+    container 'quay.io/biocontainers/samtools:1.23.1--ha83d96e_0'
+
+    input:
+    path fasta
+
+    output:
+    path "reference.decompressed.fa", emit: fasta
+
+    script:
+    """
+    gunzip -c $fasta > reference.decompressed.fa
+    """
+}
+
 process SAMTOOLS_FAIDX {
     tag "$fasta"
     label 'process_low'
@@ -31,8 +49,8 @@ process GATK_DICTIONARY {
     path "*.dict", emit: dict
 
     script:
-    // Regex to strip .fa or .fasta extension and replace with .dict
-    def dict_name = fasta.name.replaceAll(/\\.fa(sta)?$/, ".dict")
+    // Support .fa/.fasta plus optional .gz suffix when deriving dictionary name.
+    def dict_name = fasta.name.replaceAll(/(?i)\.(fa|fasta)(\.gz)?$/, ".dict")
     
     """
     gatk CreateSequenceDictionary -R $fasta -O $dict_name

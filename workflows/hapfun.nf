@@ -1,6 +1,6 @@
 include { FASTP; FASTQC; TRIMMOMATIC } from '../modules/local/qc_tools'
 include { BWA_ALIGN; BOWTIE2_ALIGN; SAMTOOLS_SORT_ALIGN } from '../modules/local/aligners'
-include { SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
+include { DECOMPRESS_FASTA; SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
 include { GFF_TO_BED } from '../modules/local/annotation_prep'
 include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam_tools'
 include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
@@ -33,8 +33,19 @@ workflow HAPFUN {
         tuple(meta, file(row.fq1), file(row.fq2)) 
     }
     
-    ch_ref = file(params.ref)
-    def ref_prefix = ch_ref.name
+    def ref_file = file(params.ref)
+    def ref_is_gz = ref_file.name.toLowerCase().endsWith('.gz')
+    def ch_ref
+    def ref_prefix
+
+    if (ref_is_gz) {
+        DECOMPRESS_FASTA(ref_file)
+        ch_ref = DECOMPRESS_FASTA.out.fasta.first()
+        ref_prefix = 'reference.decompressed.fa'
+    } else {
+        ch_ref = ref_file
+        ref_prefix = ref_file.name
+    }
     
     // NEW: Stage the MultiQC config file
     ch_multiqc_config = file(params.multiqc_config)
@@ -61,13 +72,21 @@ workflow HAPFUN {
     if (params.stop_at == 'qc') { return }
 
     // 2. PREPARE GENOME INDICES
-    def fai_path = "${params.ref}.fai"
-    if (file(fai_path).exists()) { ch_ref_fai = Channel.fromPath(fai_path).first() } 
-    else { SAMTOOLS_FAIDX(ch_ref); ch_ref_fai = SAMTOOLS_FAIDX.out.fai.first() }
+    if (ref_is_gz) {
+        SAMTOOLS_FAIDX(ch_ref)
+        ch_ref_fai = SAMTOOLS_FAIDX.out.fai.first()
 
-    def dict_path = "${params.ref.replaceAll(/\.fa(sta)?$/, '')}.dict"
-    if (file(dict_path).exists()) { ch_ref_dict = Channel.fromPath(dict_path).first() } 
-    else { GATK_DICTIONARY(ch_ref); ch_ref_dict = GATK_DICTIONARY.out.dict.first() }
+        GATK_DICTIONARY(ch_ref)
+        ch_ref_dict = GATK_DICTIONARY.out.dict.first()
+    } else {
+        def fai_path = "${params.ref}.fai"
+        if (file(fai_path).exists()) { ch_ref_fai = Channel.fromPath(fai_path).first() }
+        else { SAMTOOLS_FAIDX(ch_ref); ch_ref_fai = SAMTOOLS_FAIDX.out.fai.first() }
+
+        def dict_path = "${params.ref.replaceAll(/(?i)\.(fa|fasta)(\.gz)?$/, '')}.dict"
+        if (file(dict_path).exists()) { ch_ref_dict = Channel.fromPath(dict_path).first() }
+        else { GATK_DICTIONARY(ch_ref); ch_ref_dict = GATK_DICTIONARY.out.dict.first() }
+    }
 
     if (params.aligner == 'bwa-mem2') {
         if (params.bwa_index && file(params.bwa_index).exists()) { ch_align_index = Channel.fromPath(params.bwa_index).first() } 
