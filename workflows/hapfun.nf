@@ -173,7 +173,8 @@ workflow HAPFUN {
         ch_error_reports = VCF_MULTI_COMPARE_RAW.out.report.mix(VCF_MULTI_COMPARE_FILTERED.out.report)
         VCF_DISCORDANCE_MQC(ch_error_reports.collect())
         ch_multiqc_reports = ch_multiqc_reports.mix(ch_error_reports)
-        ch_multiqc_reports = ch_multiqc_reports.mix(VCF_DISCORDANCE_MQC.out.mqc_csv)
+        ch_multiqc_reports = ch_multiqc_reports.mix(VCF_DISCORDANCE_MQC.out.mqc_rate_csv)
+        ch_multiqc_reports = ch_multiqc_reports.mix(VCF_DISCORDANCE_MQC.out.mqc_metrics_csv)
     }
 
     // =========================================================

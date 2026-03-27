@@ -83,10 +83,12 @@ process VCF_MULTI_COMPARE {
     output:
     path "${meta.id}_${compare_label}_discordance.csv", emit: report
 
+    def vcf_args = vcfs.collect { "'${it}'" }.join(' ')
+
     script:
     """
     python $compare_script \\
-        --vcfs $vcfs \\
+        --vcfs ${vcf_args} \
         --sample ${meta.id} \\
         --out ${meta.id}_${compare_label}_discordance.csv
     """
@@ -101,56 +103,88 @@ process VCF_DISCORDANCE_MQC {
     path discordance_csvs
 
     output:
-    path "hapfun_discordance_mqc.csv", emit: mqc_csv
+    path "hapfun_discordance_rate_mqc.csv", emit: mqc_rate_csv
+    path "hapfun_discordance_metrics_mqc.csv", emit: mqc_metrics_csv
 
     script:
     """
     python - << 'PY'
-import re
 from pathlib import Path
 
 import pandas as pd
 
 sample_values = {}
+metric_cols = ['shared_sites', 'concordant', 'discordant', 'discordance_rate']
 
 for p in Path('.').glob('*_discordance.csv'):
-    m = re.match(r'(.+)_(raw|filtered)_discordance\\.csv\$', p.name)
-    if not m:
+    stem = p.name[:-len('_discordance.csv')]
+    if '_' not in stem:
         continue
 
-    sample_id, phase = m.group(1), m.group(2)
+    sample_id, phase = stem.rsplit('_', 1)
+    if phase not in ('raw', 'filtered'):
+        continue
+
     df = pd.read_csv(p)
 
-    if 'discordance_rate' in df.columns and len(df) > 0:
-        value = float(df['discordance_rate'].mean())
-    else:
-        value = 0.0
+    phase_stats = {}
+    for col in metric_cols:
+        if col in df.columns and len(df) > 0:
+            vals = pd.to_numeric(df[col], errors='coerce').dropna()
+            phase_stats[col] = float(vals.mean()) if len(vals) > 0 else 0.0
+        else:
+            phase_stats[col] = 0.0
 
-    sample_values.setdefault(sample_id, {})[phase] = round(value, 6)
+    sample_values.setdefault(sample_id, {})[phase] = phase_stats
 
 for sample_id in sample_values:
-    sample_values[sample_id].setdefault('raw', 0.0)
-    sample_values[sample_id].setdefault('filtered', 0.0)
+    sample_values[sample_id].setdefault('raw', {col: 0.0 for col in metric_cols})
+    sample_values[sample_id].setdefault('filtered', {col: 0.0 for col in metric_cols})
 
-header = (
-    "# id: 'hapfun_discordance'\\n"
-    "# section_name: 'Library Discordance Before vs After Filtering'\\n"
-    "# description: 'Mean pairwise genotype discordance rate per sample, comparing raw and filtered variant calls.'\\n"
-    "# plot_type: 'bargraph'\\n"
-    "# pconfig:\\n"
-    "#   id: 'hapfun_discordance_plot'\\n"
-    "#   title: 'Discordance Before vs After Filtering'\\n"
-    "#   ylab: 'Discordance rate'\\n"
-    "#   xlab: 'Sample'\\n"
-)
+rate_header = """# id: 'hapfun_discordance_rate'
+# section_name: 'Library Discordance Before vs After Filtering'
+# description: 'Mean pairwise genotype discordance rate per sample, comparing raw and filtered variant calls.'
+# plot_type: 'bargraph'
+# pconfig:
+#   id: 'hapfun_discordance_rate_plot'
+#   title: 'Discordance Before vs After Filtering'
+#   ylab: 'Discordance rate'
+#   xlab: 'Sample'
+"""
 
-rows = ["Sample,Raw,Filtered"]
+rate_rows = ["Sample,Raw,Filtered"]
 for sample_id, vals in sorted(sample_values.items()):
-    rows.append(f"{sample_id},{vals['raw']},{vals['filtered']}")
+    rate_rows.append(
+        f"{sample_id},{round(vals['raw']['discordance_rate'], 6)},{round(vals['filtered']['discordance_rate'], 6)}"
+    )
 
-with open('hapfun_discordance_mqc.csv', 'w') as fh:
-    fh.write(header)
-    fh.write('\\n'.join(rows) + '\\n')
+metrics_header = """# id: 'hapfun_discordance_metrics'
+# section_name: 'Library Discordance Metrics (Raw vs Filtered)'
+# description: 'Mean pairwise shared sites, concordant sites, discordant sites, and discordance rate per sample for raw and filtered calls.'
+# plot_type: 'table'
+# pconfig:
+#   id: 'hapfun_discordance_metrics_table'
+#   title: 'Library Discordance Metrics (Raw vs Filtered)'
+"""
+
+metrics_rows = [
+    "Sample,raw_shared_sites,raw_concordant,raw_discordant,raw_discordance_rate,filtered_shared_sites,filtered_concordant,filtered_discordant,filtered_discordance_rate"
+]
+for sample_id, vals in sorted(sample_values.items()):
+    metrics_rows.append(
+        f"{sample_id},"
+        f"{round(vals['raw']['shared_sites'], 6)},{round(vals['raw']['concordant'], 6)},{round(vals['raw']['discordant'], 6)},{round(vals['raw']['discordance_rate'], 6)},"
+        f"{round(vals['filtered']['shared_sites'], 6)},{round(vals['filtered']['concordant'], 6)},{round(vals['filtered']['discordant'], 6)},{round(vals['filtered']['discordance_rate'], 6)}"
+    )
+
+nl = chr(10)
+with open('hapfun_discordance_rate_mqc.csv', 'w') as fh:
+    fh.write(rate_header)
+    fh.write(nl.join(rate_rows) + nl)
+
+with open('hapfun_discordance_metrics_mqc.csv', 'w') as fh:
+    fh.write(metrics_header)
+    fh.write(nl.join(metrics_rows) + nl)
 PY
     """
 }
