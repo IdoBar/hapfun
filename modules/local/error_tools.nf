@@ -78,13 +78,14 @@ process VCF_MULTI_COMPARE {
 
     input:
     tuple val(meta), path(vcfs), path(indexes)
+    path compare_script
 
     output:
     path "${meta.id}_discordance.csv", emit: report
 
     script:
     """
-    python vcf_multi_compare.py \\
+    python $compare_script \\
         --vcfs $vcfs \\
         --sample ${meta.id} \\
         --out ${meta.id}_discordance.csv

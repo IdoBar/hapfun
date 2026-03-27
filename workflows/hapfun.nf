@@ -49,6 +49,7 @@ workflow HAPFUN {
     
     // NEW: Stage the MultiQC config file
     ch_multiqc_config = file(params.multiqc_config)
+    ch_vcf_compare_script = Channel.value(file("$projectDir/bin/vcf_multi_compare.py"))
 
     // --- STEP 1: QC ---
     if (params.start_step == 'qc') {
@@ -150,7 +151,7 @@ workflow HAPFUN {
             .groupTuple(by: 0)
             .map { id, vcfs, idxs -> tuple([id: id], vcfs, idxs) }
 
-        VCF_MULTI_COMPARE(ch_vcfs_to_compare)
+        VCF_MULTI_COMPARE(ch_vcfs_to_compare, ch_vcf_compare_script)
     }
 
     // =========================================================
