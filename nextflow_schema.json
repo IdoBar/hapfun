@@ -32,9 +32,15 @@
       "type": "object",
       "properties": {
         "filter_qual": { "type": "integer", "default": 30 },
+        "ploidy": { "type": "integer", "default": 2 },
         "filter_min_dp": { "type": "integer", "default": 10 },
         "filter_max_dp": { "type": "integer", "default": 100000 },
-        "filter_ind_dp": { "type": "integer", "default": 7 }
+        "filter_ind_dp": { "type": "integer", "default": 7 },
+        "mask_hetero": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mask heterozygous genotypes during filtering. Requires diploid variant calling (--ploidy 2)."
+        }
       }
     },
     "pipeline_logic": {
@@ -49,7 +55,7 @@
         "stop_at": {
           "type": "string",
           "enum": ["qc", "alignment", "call", "filter", "multiqc"],
-          "default": "call"
+          "default": "multiqc"
         },
         "error_estimate": { "type": "boolean", "default": false }
       }

@@ -8,9 +8,10 @@ process VCF_FILTER {
         tuple val(meta), path("${meta.id}.Q${params.filter_qual}.poly.vcf.gz"), emit: filtered_vcf
         tuple val(meta), path("${meta.id}.snps.Q${params.filter_qual}.poly.vcf.gz"), emit: snps_vcf
         tuple val(meta), path("${meta.id}.indels.Q${params.filter_qual}.poly.vcf.gz"), emit: indels_vcf
+    def gt_filter_expr = params.mask_hetero ? "GT=='het' || " : ""
     script:
     """
-    bcftools filter -S . -e "GT=='het' || FMT/DP<${params.filter_ind_dp}" $vcf | \
+    bcftools filter -S . -e "${gt_filter_expr}FMT/DP<${params.filter_ind_dp}" $vcf | \
     bcftools +fill-tags -- -t AN,AC,AF,F_MISSING | \
     bcftools view -i "QUAL>=${params.filter_qual} && INFO/DP>=${params.filter_min_dp} && INFO/DP<=${params.filter_max_dp} && COUNT(GT='ref')>=1 && COUNT(GT='alt')>=1" \
     -O z -o ${meta.id}.Q${params.filter_qual}.poly.vcf.gz

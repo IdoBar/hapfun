@@ -11,24 +11,24 @@
 
 ## Introduction
 
-**HapFun** (Haploid Fungal SNP Calling) is a highly scalable bioinformatics pipeline for identifying single nucleotide polymorphisms (SNPs) and insertions/deletions (Indels) from whole-genome sequencing (WGS) data. 
+**HapFun** (Haploid Fungal SNP Calling) is a highly scalable bioinformatics pipeline for identifying single nucleotide polymorphisms (SNPs) and insertions/deletions (Indels) from whole-genome sequencing (WGS) data of clonal haploid fungal isolates.
 
-Built using Nextflow DSL2 and strictly adhering to nf-core data structures (including meta maps), HapFun bridges the gap between raw sequencing reads and high-quality, filtered variant calls. It is highly parameterized, automatically handles missing reference indices, and includes a unique parallel track for estimating error rates across replicate libraries.
+Built using Nextflow DSL2 and strictly adhering to nf-core data structures (including meta maps), HapFun bridges the gap between raw sequencing reads and high-quality, filtered variant calls. It is highly parameterized, automatically handles missing reference indices, and includes a unique parallel track for estimating error rates across replicate libraries of same samples.
 
 ## Pipeline Summary
 
-By default, HapFun executes the following steps:
+By default, **HapFun** performs the following steps:
 
-1. **Reference Preparation**: Automatically generates missing `.fai`, `.dict`, and aligner index directories (`bwa-mem2` or `bowtie2`) if not provided by the user.
+1. **Reference Preparation**: Automatically decompresses the reference (if provided as `.fasta.gz`) and generates missing `.fai`, `.dict`, and aligner index directories (`bwa-mem2` or `bowtie2`) if not provided by the user.
 2. **Read QC & Trimming**: `fastp` (default) OR `FastQC` + `Trimmomatic`.
 3. **Read Alignment**: `bwa-mem2` (default) or `bowtie2`.
-4. **BAM Processing**: 
+4. **BAM Processing**:
     * Merges multiple libraries belonging to the same sample (`samtools`).
     * Marks optical/PCR duplicates (`GATK MarkDuplicates`).
 5. **Alignment QC**: `Qualimap` (Supports optional `.gff`/`.bed` annotations for targeted region metrics).
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
-7. **Error Estimation (Optional)**: If `--error_estimate true` is flagged, the pipeline automatically separates replicate libraries, calls variants on them independently, and calculates genotype discordance rates using a custom Python module.
+7. **Error Estimation (Optional)**: If `--error_estimate true` is flagged, the pipeline automatically separates replicate libraries, calls variants on them independently, and calculates genotype discordance rates using a custom Python module. The raw per-library VCFs used in this comparison are also retained in `results/variants/error_estimate_libraries/`.
 8. **Variant Filtering**: Strictly filters VCFs based on Depth (DP), Quality (QUAL), and polymorphism, while recalculating INFO tags (`bcftools +fill-tags`). Outputs distinct `.snps.vcf` and `.indels.vcf` files.
 9. **Final Reporting**: Aggregates QC metrics across all steps into a single HTML report (`MultiQC`).
 
@@ -91,6 +91,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--trimmer`: `fastp` (default) or `trimmomatic`
 * `--aligner`: `bwa-mem2` (default) or `bowtie2`
 * `--caller`: `freebayes` (default) or `gatk`
+* `--ploidy`: Expected sample ploidy used by variant callers (Default: 2). Set to `1` for true haploid genomes, or higher values for polyploid organisms.
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--error_estimate`: `false` (default) or `true`
 
@@ -99,21 +100,25 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--filter_qual`: Minimum QUAL score (Default: 30)
 * `--filter_min_dp`: Minimum Depth (Default: 10)
 * `--filter_ind_dp`: Minimum individual genotype depth (Default: 7)
+* `--mask_hetero`: Mask heterozygous genotypes (`GT=='het'`) during filtering (Default: `true`). Requires diploid variant calling (`--ploidy 2`).
 
 ## Output Directory Structure
 
 Upon completion, the `--outdir` will contain the following structured directories:
 
+```text
     results/
     ├── aligned/              # Final, merged, deduplicated BAM files
     ├── error_estimates/      # CSV reports of replicate discordance rates
     ├── multiqc/              # Aggregated HTML QC report
     ├── qc/                   # Individual QC reports (Fastp, FastQC, Qualimap, BCFtools)
     └── variants/
+        ├── error_estimate_libraries/ # Raw per-library VCFs used for error-rate estimation (`--error_estimate true`)
         ├── individual/       # Raw per-sample VCFs (if using individual mode)
         ├── merged/           # Raw aggregated VCF (if using individual mode)
         ├── population/       # Raw aggregated VCF (from Freebayes population mode)
         └── filtered/         # FINAL processed VCFs (SNPs, Indels, and combined)
+```
 
 ## Credits
 
