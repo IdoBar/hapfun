@@ -7,7 +7,8 @@ process MULTIQC {
 
     input: 
     path multiqc_files
-    path multiqc_config // NEW: Accept the config file
+    path multiqc_config
+    path multiqc_logo   // staged alongside config so relative path in YAML resolves
 
     output:
         path "multiqc_report.html", emit: report

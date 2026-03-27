@@ -40,15 +40,16 @@ workflow HAPFUN {
 
     if (ref_is_gz) {
         DECOMPRESS_FASTA(ref_file)
-        ch_ref = DECOMPRESS_FASTA.out.fasta.first()
+        ch_ref = DECOMPRESS_FASTA.out.fasta
         ref_prefix = 'reference.decompressed.fa'
     } else {
         ch_ref = ref_file
         ref_prefix = ref_file.name
     }
     
-    // NEW: Stage the MultiQC config file
+    // Stage MultiQC config and logo together so the relative logo path in the YAML resolves
     ch_multiqc_config = file(params.multiqc_config)
+    ch_multiqc_logo   = file("$projectDir/assets/hapfun.png")
     ch_vcf_compare_script = Channel.value(file("$projectDir/bin/vcf_multi_compare.py"))
 
     // --- STEP 1: QC ---
@@ -75,35 +76,35 @@ workflow HAPFUN {
     // 2. PREPARE GENOME INDICES
     if (ref_is_gz) {
         SAMTOOLS_FAIDX(ch_ref)
-        ch_ref_fai = SAMTOOLS_FAIDX.out.fai.first()
+        ch_ref_fai = SAMTOOLS_FAIDX.out.fai
 
         GATK_DICTIONARY(ch_ref)
-        ch_ref_dict = GATK_DICTIONARY.out.dict.first()
+        ch_ref_dict = GATK_DICTIONARY.out.dict
     } else {
         def fai_path = "${params.ref}.fai"
-        if (file(fai_path).exists()) { ch_ref_fai = Channel.fromPath(fai_path).first() }
-        else { SAMTOOLS_FAIDX(ch_ref); ch_ref_fai = SAMTOOLS_FAIDX.out.fai.first() }
+        if (file(fai_path).exists()) { ch_ref_fai = Channel.value(file(fai_path)) }
+        else { SAMTOOLS_FAIDX(ch_ref); ch_ref_fai = SAMTOOLS_FAIDX.out.fai }
 
         def dict_path = "${params.ref.replaceAll(/(?i)\.(fa|fasta)(\.gz)?$/, '')}.dict"
-        if (file(dict_path).exists()) { ch_ref_dict = Channel.fromPath(dict_path).first() }
-        else { GATK_DICTIONARY(ch_ref); ch_ref_dict = GATK_DICTIONARY.out.dict.first() }
+        if (file(dict_path).exists()) { ch_ref_dict = Channel.value(file(dict_path)) }
+        else { GATK_DICTIONARY(ch_ref); ch_ref_dict = GATK_DICTIONARY.out.dict }
     }
 
     if (params.aligner == 'bwa-mem2') {
-        if (params.bwa_index && file(params.bwa_index).exists()) { ch_align_index = Channel.fromPath(params.bwa_index).first() } 
-        else { BWA_INDEX(ch_ref); ch_align_index = BWA_INDEX.out.index.first() }
+        if (params.bwa_index && file(params.bwa_index).exists()) { ch_align_index = Channel.value(file(params.bwa_index)) } 
+        else { BWA_INDEX(ch_ref); ch_align_index = BWA_INDEX.out.index }
     } else {
-        if (params.bowtie2_index && file(params.bowtie2_index).exists()) { ch_align_index = Channel.fromPath(params.bowtie2_index).first() } 
-        else { BOWTIE2_INDEX(ch_ref); ch_align_index = BOWTIE2_INDEX.out.index.first() }
+        if (params.bowtie2_index && file(params.bowtie2_index).exists()) { ch_align_index = Channel.value(file(params.bowtie2_index)) } 
+        else { BOWTIE2_INDEX(ch_ref); ch_align_index = BOWTIE2_INDEX.out.index }
     }
 
     // 3. PREPARE ANNOTATION (For Qualimap)
     if (params.annotation) {
         if (params.annotation.endsWith('.gff') || params.annotation.endsWith('.gff3')) {
             GFF_TO_BED(file(params.annotation))
-            ch_annot_bed = GFF_TO_BED.out.bed.first()
+            ch_annot_bed = GFF_TO_BED.out.bed
         } else if (params.annotation.endsWith('.bed')) {
-            ch_annot_bed = Channel.fromPath(params.annotation, checkIfExists: true).first()
+            ch_annot_bed = Channel.value(file(params.annotation, checkIfExists: true))
         } else { error "Annotation file must be .gff, .gff3, or .bed format" }
     } else { ch_annot_bed = Channel.value(file("$projectDir/assets/NO_FILE")) }
 
@@ -172,7 +173,7 @@ workflow HAPFUN {
         ch_error_reports = VCF_MULTI_COMPARE_RAW.out.report.mix(VCF_MULTI_COMPARE_FILTERED.out.report)
         VCF_DISCORDANCE_MQC(ch_error_reports.collect())
         ch_multiqc_reports = ch_multiqc_reports.mix(ch_error_reports)
-        ch_multiqc_reports = ch_multiqc_reports.mix(VCF_DISCORDANCE_MQC.out.mqc_json)
+        ch_multiqc_reports = ch_multiqc_reports.mix(VCF_DISCORDANCE_MQC.out.mqc_csv)
     }
 
     // =========================================================
@@ -244,7 +245,7 @@ workflow HAPFUN {
     
     // --- FINAL STEP: MULTIQC ---
     
-    // Pass the config file as the second argument
-    MULTIQC(ch_multiqc_reports.collect(), ch_multiqc_config)
+    // Pass config and logo so both are staged in the work directory
+    MULTIQC(ch_multiqc_reports.collect(), ch_multiqc_config, ch_multiqc_logo)
 
 }

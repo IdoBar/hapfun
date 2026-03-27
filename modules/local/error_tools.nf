@@ -101,12 +101,11 @@ process VCF_DISCORDANCE_MQC {
     path discordance_csvs
 
     output:
-    path "discordance_before_after_mqc.json", emit: mqc_json
+    path "hapfun_discordance_mqc.csv", emit: mqc_csv
 
     script:
     """
     python - << 'PY'
-import json
 import re
 from pathlib import Path
 
@@ -122,7 +121,6 @@ for p in Path('.').glob('*_discordance.csv'):
     sample_id, phase = m.group(1), m.group(2)
     df = pd.read_csv(p)
 
-    # Empty CSVs (e.g., <2 libraries) should still appear as 0.0 in the plot.
     if 'discordance_rate' in df.columns and len(df) > 0:
         value = float(df['discordance_rate'].mean())
     else:
@@ -134,23 +132,25 @@ for sample_id in sample_values:
     sample_values[sample_id].setdefault('raw', 0.0)
     sample_values[sample_id].setdefault('filtered', 0.0)
 
-mqc = {
-    'id': 'hapfun_discordance_before_after',
-    'section_name': 'Library Discordance Before vs After Filtering',
-    'description': 'Mean pairwise library discordance rate per sample, comparing raw and filtered calls.',
-    'plot_type': 'bargraph',
-    'pconfig': {
-        'id': 'hapfun_discordance_before_after_plot',
-        'title': 'Discordance Before vs After Filtering',
-        'ylab': 'Discordance rate (%)',
-        'xlab': 'Sample',
-        'categories': True
-    },
-    'data': sample_values
-}
+header = (
+    "# id: 'hapfun_discordance'\n"
+    "# section_name: 'Library Discordance Before vs After Filtering'\n"
+    "# description: 'Mean pairwise genotype discordance rate per sample, comparing raw and filtered variant calls.'\n"
+    "# plot_type: 'bargraph'\n"
+    "# pconfig:\n"
+    "#   id: 'hapfun_discordance_plot'\n"
+    "#   title: 'Discordance Before vs After Filtering'\n"
+    "#   ylab: 'Discordance rate'\n"
+    "#   xlab: 'Sample'\n"
+)
 
-with open('discordance_before_after_mqc.json', 'w') as fh:
-    json.dump(mqc, fh)
+rows = ["Sample,Raw,Filtered"]
+for sample_id, vals in sorted(sample_values.items()):
+    rows.append(f"{sample_id},{vals['raw']},{vals['filtered']}")
+
+with open('hapfun_discordance_mqc.csv', 'w') as fh:
+    fh.write(header)
+    fh.write('\n'.join(rows) + '\n')
 PY
     """
 }

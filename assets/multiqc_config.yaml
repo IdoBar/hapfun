@@ -1,8 +1,8 @@
-# Save as: assets/multiqc_config.yml
+# Save as: assets/multiqc_config.yaml
 
 title: "HapFun"
 subtitle: "Haploid Fungal SNP Calling Pipeline"
-report_comment: "Automated QC and Variant Calling Report"
+report_comment: "Automated QC, Alignment and Variant Calling Report"
 
 # Order the report logically from reads -> alignments -> variants
 module_order:
@@ -31,7 +31,7 @@ picard_config:
   markduplicates_keep_name: false
 
 # Customize logo settings
-custom_logo: "$baseDir/assets/hapfun.png"
+custom_logo: "hapfun.png"  # filename only — staged alongside this config in the process work directory
 # custom_logo_dark: "/abs/path/to/logo-for-dark-mode.png"
 custom_logo_url: "https://github.com/IdoBar/hapfun"
 custom_logo_title: "Haploid Fungal SNP Calling Pipeline"
