@@ -1,3 +1,36 @@
+# Save as: assets/multiqc_config.yml
+
+title: "HapFun"
+subtitle: "Haploid Fungal SNP Calling Pipeline"
+report_comment: "Automated QC and Variant Calling Report"
+
+# Order the report logically from reads -> alignments -> variants
+module_order:
+  - fastp
+  - fastqc
+  - trimmomatic
+  - picard
+  - qualimap
+  - bcftools
+
+# Clean up tool extensions so the report labels are easy to read
+extra_fn_clean_exts:
+  - '.fastp'
+  - '_qualimap'
+  - '.dedup'
+  - '.vcf'
+  - '.stats'
+  - '_discordance'
+
+# Customize the BCFtools section to clearly separate raw vs filtered VCFs
+bcftools:
+  collapse_complementary_skips: true
+  
+# Customize Picard MarkDuplicates
+picard_config:
+  markduplicates_keep_name: false
+
+# Customize logo settings
 custom_logo: "$baseDir/assets/hapfun.png"
 # custom_logo_dark: "/abs/path/to/logo-for-dark-mode.png"
 custom_logo_url: "https://github.com/IdoBar/hapfun"

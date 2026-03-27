@@ -3,7 +3,7 @@ include { BWA_ALIGN; BOWTIE2_ALIGN } from '../modules/local/aligners'
 include { SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
 include { GFF_TO_BED } from '../modules/local/annotation_prep'
 include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam_tools'
-include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER } from '../modules/local/variant_callers'
+include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
 include { BCFTOOLS_MERGE } from '../modules/local/vcf_tools'
 include { MULTIQC } from '../modules/local/multiqc'
 include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE } from '../modules/local/error_tools'
@@ -21,6 +21,9 @@ workflow HAPFUN {
     
     ch_ref = file(params.ref)
     def ref_prefix = ch_ref.name
+    
+    // NEW: Stage the MultiQC config file
+    ch_multiqc_config = file(params.multiqc_config)
 
     // 2. PREPARE GENOME INDICES
     def fai_path = "${params.ref}.fai"
@@ -134,25 +137,35 @@ workflow HAPFUN {
     // --- STEP 3: VARIANT CALLING ---
     ch_final_vcf = Channel.empty()
 
-    if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
+    if (params.caller == 'gatk') {
+        // 1. Call individual gVCFs
+        GATK_HAPLOTYPECALLER(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai, ch_ref_dict)
+        
+        // 2. Collect all gVCFs and indices into flat lists
+        ch_gvcfs = GATK_HAPLOTYPECALLER.out.gvcf.map { meta, gvcf, tbi -> gvcf }.collect()
+        ch_tbis  = GATK_HAPLOTYPECALLER.out.gvcf.map { meta, gvcf, tbi -> tbi }.collect()
+        
+        // 3. Combine gVCFs
+        GATK_COMBINEGVCFS(ch_gvcfs, ch_tbis, ch_ref, ch_ref_fai, ch_ref_dict)
+        
+        // 4. Joint Genotype the cohort
+        GATK_GENOTYPEGVCFS(GATK_COMBINEGVCFS.out.gvcf, GATK_COMBINEGVCFS.out.tbi, ch_ref, ch_ref_fai, ch_ref_dict)
+        
+        // 5. Package for filtering
+        ch_final_vcf = GATK_GENOTYPEGVCFS.out.vcf.map { vcf -> tuple([id: "gatk_joint"], vcf) }
+        
+    } else if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
         ch_all_bams = MARK_DUPLICATES.out.dedup_bam.map{ it[1] }.collect()
         ch_all_bais = MARK_DUPLICATES.out.dedup_bam.map{ it[2] }.collect()
         FREEBAYES_POPULATION(ch_all_bams, ch_all_bais, ch_ref, ch_ref_fai)
         ch_final_vcf = FREEBAYES_POPULATION.out.vcf.map { vcf -> tuple([id: "population"], vcf) }
+        
     } else {
-        if (params.caller == 'gatk') {
-            GATK_HAPLOTYPECALLER(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai, ch_ref_dict)
-            ch_vcfs = GATK_HAPLOTYPECALLER.out.vcf
-            ch_tbis = GATK_HAPLOTYPECALLER.out.tbi
-        } else {
-            FREEBAYES(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai)
-            ch_vcfs = FREEBAYES.out.vcf
-            ch_tbis = FREEBAYES.out.csi
-        }
-        BCFTOOLS_MERGE(ch_vcfs.collect(), ch_tbis.collect())
+        // Fallback: Individual Freebayes calling & standard merging
+        FREEBAYES(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai)
+        BCFTOOLS_MERGE(FREEBAYES.out.vcf.collect(), FREEBAYES.out.csi.collect())
         ch_final_vcf = BCFTOOLS_MERGE.out.vcf.map { vcf -> tuple([id: "merged"], vcf) }
     }
-
     // --- STEP 4: FILTERING & METRICS ---
     BCFTOOLS_STATS_RAW(ch_final_vcf)
     ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_RAW.out.stats.map { meta, file -> file })
@@ -164,5 +177,8 @@ workflow HAPFUN {
     ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_FILTERED.out.stats.map { meta, file -> file })
     
     // --- FINAL STEP: MULTIQC ---
-    MULTIQC(ch_multiqc_reports.collect())
+    
+    // Pass the config file as the second argument
+    MULTIQC(ch_multiqc_reports.collect(), ch_multiqc_config)
+
 }
