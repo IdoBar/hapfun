@@ -84,7 +84,7 @@ process VCF_MULTI_COMPARE {
 
     script:
     """
-    vcf_multi_compare.py \\
+    python vcf_multi_compare.py \\
         --vcfs $vcfs \\
         --sample ${meta.id} \\
         --out ${meta.id}_discordance.csv
