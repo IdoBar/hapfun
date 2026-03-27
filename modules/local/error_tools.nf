@@ -133,15 +133,15 @@ for sample_id in sample_values:
     sample_values[sample_id].setdefault('filtered', 0.0)
 
 header = (
-    "# id: 'hapfun_discordance'\n"
-    "# section_name: 'Library Discordance Before vs After Filtering'\n"
-    "# description: 'Mean pairwise genotype discordance rate per sample, comparing raw and filtered variant calls.'\n"
-    "# plot_type: 'bargraph'\n"
-    "# pconfig:\n"
-    "#   id: 'hapfun_discordance_plot'\n"
-    "#   title: 'Discordance Before vs After Filtering'\n"
-    "#   ylab: 'Discordance rate'\n"
-    "#   xlab: 'Sample'\n"
+    "# id: 'hapfun_discordance'\\n"
+    "# section_name: 'Library Discordance Before vs After Filtering'\\n"
+    "# description: 'Mean pairwise genotype discordance rate per sample, comparing raw and filtered variant calls.'\\n"
+    "# plot_type: 'bargraph'\\n"
+    "# pconfig:\\n"
+    "#   id: 'hapfun_discordance_plot'\\n"
+    "#   title: 'Discordance Before vs After Filtering'\\n"
+    "#   ylab: 'Discordance rate'\\n"
+    "#   xlab: 'Sample'\\n"
 )
 
 rows = ["Sample,Raw,Filtered"]
@@ -150,7 +150,7 @@ for sample_id, vals in sorted(sample_values.items()):
 
 with open('hapfun_discordance_mqc.csv', 'w') as fh:
     fh.write(header)
-    fh.write('\n'.join(rows) + '\n')
+    fh.write('\\n'.join(rows) + '\\n')
 PY
     """
 }
