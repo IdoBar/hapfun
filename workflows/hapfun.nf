@@ -6,7 +6,7 @@ include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam
 include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
 include { BCFTOOLS_MERGE } from '../modules/local/vcf_tools'
 include { MULTIQC } from '../modules/local/multiqc'
-include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
+include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
 include { VCF_FILTER } from '../modules/local/vcf_filter'
 include { BCFTOOLS_STATS as BCFTOOLS_STATS_RAW; BCFTOOLS_STATS as BCFTOOLS_STATS_FILTERED } from '../modules/local/vcf_tools'
 
@@ -151,7 +151,7 @@ workflow HAPFUN {
             .groupTuple(by: 0)
             .map { id, vcfs -> tuple([id: id], 'raw', vcfs) }
 
-        VCF_MULTI_COMPARE(ch_vcfs_to_compare_raw, ch_vcf_compare_script)
+        VCF_MULTI_COMPARE_RAW(ch_vcfs_to_compare_raw, ch_vcf_compare_script)
 
         // Filter each library VCF, then compare discordance again after filtering.
         ch_lib_vcfs_for_filter = ch_lib_vcfs.map { meta, vcf, idx -> tuple(meta, vcf) }
@@ -162,9 +162,9 @@ workflow HAPFUN {
             .groupTuple(by: 0)
             .map { id, vcfs -> tuple([id: id], 'filtered', vcfs) }
 
-        VCF_MULTI_COMPARE(ch_vcfs_to_compare_filtered, ch_vcf_compare_script)
+        VCF_MULTI_COMPARE_FILTERED(ch_vcfs_to_compare_filtered, ch_vcf_compare_script)
 
-        ch_error_reports = VCF_MULTI_COMPARE.out.report
+        ch_error_reports = VCF_MULTI_COMPARE_RAW.out.report.mix(VCF_MULTI_COMPARE_FILTERED.out.report)
         VCF_DISCORDANCE_MQC(ch_error_reports.collect())
         ch_multiqc_reports = ch_multiqc_reports.mix(ch_error_reports)
         ch_multiqc_reports = ch_multiqc_reports.mix(VCF_DISCORDANCE_MQC.out.mqc_json)
