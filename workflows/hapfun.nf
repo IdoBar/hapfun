@@ -7,7 +7,7 @@ include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVC
 include { BCFTOOLS_MERGE } from '../modules/local/vcf_tools'
 include { MULTIQC } from '../modules/local/multiqc'
 include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
-include { VCF_FILTER } from '../modules/local/vcf_filter'
+include { VCF_FILTER as VCF_FILTER_LIB; VCF_FILTER as VCF_FILTER_FINAL } from '../modules/local/vcf_filter'
 include { BCFTOOLS_STATS as BCFTOOLS_STATS_RAW; BCFTOOLS_STATS as BCFTOOLS_STATS_FILTERED } from '../modules/local/vcf_tools'
 
 workflow HAPFUN {
@@ -155,9 +155,9 @@ workflow HAPFUN {
 
         // Filter each library VCF, then compare discordance again after filtering.
         ch_lib_vcfs_for_filter = ch_lib_vcfs.map { meta, vcf, idx -> tuple(meta, vcf) }
-        VCF_FILTER(ch_lib_vcfs_for_filter)
+        VCF_FILTER_LIB(ch_lib_vcfs_for_filter)
 
-        ch_vcfs_to_compare_filtered = VCF_FILTER.out.filtered_vcf
+        ch_vcfs_to_compare_filtered = VCF_FILTER_LIB.out.filtered_vcf
             .map { meta, vcf -> tuple(meta.id, vcf) }
             .groupTuple(by: 0)
             .map { id, vcfs -> tuple([id: id], 'filtered', vcfs) }
@@ -229,8 +229,8 @@ workflow HAPFUN {
     BCFTOOLS_STATS_RAW(ch_final_vcf)
     ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_RAW.out.stats)
 
-    VCF_FILTER(ch_final_vcf)
-    ch_filtered_vcf = VCF_FILTER.out.filtered_vcf.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
+    VCF_FILTER_FINAL(ch_final_vcf)
+    ch_filtered_vcf = VCF_FILTER_FINAL.out.filtered_vcf.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
 
     BCFTOOLS_STATS_FILTERED(ch_filtered_vcf)
     ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_FILTERED.out.stats)
