@@ -154,11 +154,16 @@ workflow HAPFUN {
         VCF_MULTI_COMPARE_RAW(ch_vcfs_to_compare_raw, ch_vcf_compare_script)
 
         // Filter each library VCF, then compare discordance again after filtering.
-        ch_lib_vcfs_for_filter = ch_lib_vcfs.map { meta, vcf, idx -> tuple(meta, vcf) }
+        // Give each library a unique meta.id (sample_library) so VCF_FILTER_LIB output
+        // filenames don't collide; also carry the original sample id for re-grouping.
+        ch_lib_vcfs_for_filter = ch_lib_vcfs.map { meta, vcf, idx ->
+            def lib_meta = [ id: "${meta.id}_${meta.library}", sample: meta.id, library: meta.library ]
+            tuple(lib_meta, vcf)
+        }
         VCF_FILTER_LIB(ch_lib_vcfs_for_filter)
 
         ch_vcfs_to_compare_filtered = VCF_FILTER_LIB.out.filtered_vcf
-            .map { meta, vcf -> tuple(meta.id, vcf) }
+            .map { meta, vcf -> tuple(meta.sample, vcf) }
             .groupTuple(by: 0)
             .map { id, vcfs -> tuple([id: id], 'filtered', vcfs) }
 
