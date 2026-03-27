@@ -115,7 +115,7 @@ import pandas as pd
 sample_values = {}
 
 for p in Path('.').glob('*_discordance.csv'):
-    m = re.match(r'(.+)_(raw|filtered)_discordance\\.csv$', p.name)
+    m = re.match(r'(.+)_(raw|filtered)_discordance\\.csv\$', p.name)
     if not m:
         continue
 
