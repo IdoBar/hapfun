@@ -41,6 +41,16 @@
       "title": "Pipeline Logic",
       "type": "object",
       "properties": {
+        "start_step": {
+          "type": "string",
+          "enum": ["qc", "alignment"],
+          "default": "qc"
+        },
+        "stop_at": {
+          "type": "string",
+          "enum": ["qc", "alignment", "call", "filter", "multiqc"],
+          "default": "call"
+        },
         "error_estimate": { "type": "boolean", "default": false }
       }
     }

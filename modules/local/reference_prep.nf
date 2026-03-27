@@ -32,7 +32,7 @@ process GATK_DICTIONARY {
 
     script:
     // Regex to strip .fa or .fasta extension and replace with .dict
-    def dict_name = fasta.name.replaceAll(/\\.fa(sta)?\$/, ".dict")
+    def dict_name = fasta.name.replaceAll(/\\.fa(sta)?$/, ".dict")
     
     """
     gatk CreateSequenceDictionary -R $fasta -O $dict_name

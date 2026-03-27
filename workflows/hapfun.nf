@@ -12,6 +12,20 @@ include { BCFTOOLS_STATS as BCFTOOLS_STATS_RAW; BCFTOOLS_STATS as BCFTOOLS_STATS
 
 workflow HAPFUN {
     ch_multiqc_reports = Channel.empty()
+
+    def step_order = [qc: 1, alignment: 2, call: 3, filter: 4, multiqc: 5]
+    def valid_start_steps = ['qc', 'alignment']
+    def valid_stop_steps = ['qc', 'alignment', 'call', 'filter', 'multiqc']
+
+    if (!valid_start_steps.contains(params.start_step)) {
+        error "Invalid --start_step '${params.start_step}'. Supported values: ${valid_start_steps.join(', ')}"
+    }
+    if (!valid_stop_steps.contains(params.stop_at)) {
+        error "Invalid --stop_at '${params.stop_at}'. Supported values: ${valid_stop_steps.join(', ')}"
+    }
+    if (step_order[params.start_step] > step_order[params.stop_at]) {
+        error "Invalid step window: --start_step '${params.start_step}' occurs after --stop_at '${params.stop_at}'"
+    }
     
     // 1. INPUT PARSING
     ch_input = Channel.fromPath(params.input).splitCsv(header:true).map { row -> 
@@ -24,6 +38,27 @@ workflow HAPFUN {
     
     // NEW: Stage the MultiQC config file
     ch_multiqc_config = file(params.multiqc_config)
+
+    // --- STEP 1: QC ---
+    if (params.start_step == 'qc') {
+        if (params.trimmer == 'fastp') {
+            FASTP(ch_input)
+            ch_reads = FASTP.out.trimmed_reads
+            ch_multiqc_reports = ch_multiqc_reports.mix(FASTP.out.json)
+        } 
+        else if (params.trimmer == 'trimmomatic') {
+            FASTQC(ch_input)
+            ch_multiqc_reports = ch_multiqc_reports.mix(FASTQC.out.results)
+
+            TRIMMOMATIC(ch_input)
+            ch_reads = TRIMMOMATIC.out.trimmed_reads
+            ch_multiqc_reports = ch_multiqc_reports.mix(TRIMMOMATIC.out.log)
+        } else { ch_reads = ch_input }
+    } else {
+        ch_reads = ch_input
+    }
+
+    if (params.stop_at == 'qc') { return }
 
     // 2. PREPARE GENOME INDICES
     def fai_path = "${params.ref}.fai"
@@ -48,26 +83,9 @@ workflow HAPFUN {
             GFF_TO_BED(file(params.annotation))
             ch_annot_bed = GFF_TO_BED.out.bed.first()
         } else if (params.annotation.endsWith('.bed')) {
-            ch_annot_bed = Channel.fromPath(params.annotation).first()
+            ch_annot_bed = Channel.fromPath(params.annotation, checkIfExists: true).first()
         } else { error "Annotation file must be .gff, .gff3, or .bed format" }
-    } else { ch_annot_bed = Channel.value([]) }
-
-    // --- STEP 1: QC ---
-    if (params.trimmer == 'fastp') {
-        FASTP(ch_input)
-        ch_reads = FASTP.out.trimmed_reads
-        ch_multiqc_reports = ch_multiqc_reports.mix(FASTP.out.json.map { meta, file -> file })
-    } 
-    else if (params.trimmer == 'trimmomatic') {
-        FASTQC(ch_input)
-        ch_multiqc_reports = ch_multiqc_reports.mix(FASTQC.out.results.map { meta, files -> files })
-
-        TRIMMOMATIC(ch_input)
-        ch_reads = TRIMMOMATIC.out.trimmed_reads
-        ch_multiqc_reports = ch_multiqc_reports.mix(TRIMMOMATIC.out.log.map { meta, log -> log })
-    } else { ch_reads = ch_input }
-
-    if (params.stop_at == 'qc') { return }
+    } else { ch_annot_bed = Channel.value(file("$projectDir/assets/NO_FILE")) }
 
     // --- STEP 2: ALIGNMENT ---
     if (params.aligner == 'bwa-mem2') {
@@ -126,9 +144,9 @@ workflow HAPFUN {
     
     SAMTOOLS_MERGE(ch_for_merge)
     MARK_DUPLICATES(SAMTOOLS_MERGE.out.merged_bam)
-    ch_multiqc_reports = ch_multiqc_reports.mix(MARK_DUPLICATES.out.metrics.map { meta, file -> file })
+    ch_multiqc_reports = ch_multiqc_reports.mix(MARK_DUPLICATES.out.metrics)
     
-    QUALIMAP(MARK_DUPLICATES.out.dedup_bam, ch_annot_bed.ifEmpty([]))
+    QUALIMAP(MARK_DUPLICATES.out.dedup_bam, ch_annot_bed)
     // Note: Use .results if your module emits tuple(meta, dir), or .report if it emits path(dir)
     ch_multiqc_reports = ch_multiqc_reports.mix(QUALIMAP.out.results.map { meta, dir -> dir })
 
@@ -166,15 +184,20 @@ workflow HAPFUN {
         BCFTOOLS_MERGE(FREEBAYES.out.vcf.collect(), FREEBAYES.out.csi.collect())
         ch_final_vcf = BCFTOOLS_MERGE.out.vcf.map { vcf -> tuple([id: "merged"], vcf) }
     }
+
+    if (params.stop_at == 'call') { return }
+
     // --- STEP 4: FILTERING & METRICS ---
     BCFTOOLS_STATS_RAW(ch_final_vcf)
-    ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_RAW.out.stats.map { meta, file -> file })
+    ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_RAW.out.stats)
 
     VCF_FILTER(ch_final_vcf)
     ch_filtered_vcf = VCF_FILTER.out.filtered_vcf.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
 
     BCFTOOLS_STATS_FILTERED(ch_filtered_vcf)
-    ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_FILTERED.out.stats.map { meta, file -> file })
+    ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_FILTERED.out.stats)
+
+    if (params.stop_at == 'filter') { return }
     
     // --- FINAL STEP: MULTIQC ---
     

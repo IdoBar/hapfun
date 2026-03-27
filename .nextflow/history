@@ -1,0 +1,1 @@
+2026-03-27 03:19:17	5.9s	voluminous_chandrasekhar	OK	d9f3b907e70df0f311dfdd2465b4ae02	6309c28a-631e-4465-9bac-23d7db2e6dea	nextflow run main.nf --input assets/_empty_samplesheet.csv --start_step qc --stop_at qc -stub-run -ansi-log false
