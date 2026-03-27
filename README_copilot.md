@@ -174,3 +174,7 @@ By default, outputs are written to `results/`:
 ## Acknowledgement
 
 This pipeline follows nf-core style channel conventions (meta maps and tuple channels) while being customized for haploid fungal variant discovery.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

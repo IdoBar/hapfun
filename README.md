@@ -129,3 +129,7 @@ HapFun utilizes the following open-source tools via [Bioconda](https://bioconda.
 * [MultiQC](https://multiqc.info/)
 
 *This pipeline leverages the module patterns and configuration standards developed by the nf-core community.*
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
