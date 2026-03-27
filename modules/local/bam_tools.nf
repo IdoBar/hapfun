@@ -22,7 +22,7 @@ process MARK_DUPLICATES {
         path "${meta.id}.metrics.txt", emit: metrics 
     script:
     """
-    gatk MarkDuplicates -I $bam -O ${meta.id}.dedup.bam -M ${meta.id}.metrics.txt --CREATE_INDEX true
+    gatk MarkDuplicates -I $bam -O ${meta.id}.dedup.bam -M ${meta.id}.metrics.txt --CREATE_INDEX true --READ_NAME_REGEX null
     """
 }
 

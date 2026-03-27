@@ -15,8 +15,9 @@ process BWA_ALIGN {
     
     script:
     def args = task.ext.args ?: ''
+    def rg = "@RG\\tID:${meta.id}.${meta.library}\\tSM:${meta.id}\\tLB:${meta.library}\\tPL:ILLUMINA"
     """
-    bwa-mem2 mem -t ${task.cpus} $args ${index_dir}/${prefix} $read1 $read2 > ${meta.id}_${meta.library}.sam
+    bwa-mem2 mem -t ${task.cpus} -R '$rg' $args ${index_dir}/${prefix} $read1 $read2 > ${meta.id}_${meta.library}.sam
     """
 }
 
@@ -36,7 +37,8 @@ process BOWTIE2_ALIGN {
     script:
     def args = task.ext.args ?: ''
     """
-    bowtie2 -x ${index_dir}/${prefix} -1 $read1 -2 $read2 -p ${task.cpus} $args > ${meta.id}_${meta.library}.sam
+    bowtie2 -x ${index_dir}/${prefix} -1 $read1 -2 $read2 -p ${task.cpus} $args \
+        --rg-id ${meta.id}.${meta.library} --rg SM:${meta.id} --rg LB:${meta.library} --rg PL:ILLUMINA > ${meta.id}_${meta.library}.sam
     """
 }
 

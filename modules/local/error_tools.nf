@@ -19,7 +19,8 @@ process MARK_DUPLICATES_LIB {
         -I $bam \\
         -O ${meta.id}_${meta.library}.dedup.bam \\
         -M ${meta.id}_${meta.library}.metrics.txt \\
-        --CREATE_INDEX true
+        --CREATE_INDEX true \\
+        --READ_NAME_REGEX null
     """
 }
 
