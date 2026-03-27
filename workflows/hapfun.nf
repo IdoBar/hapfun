@@ -1,5 +1,5 @@
 include { FASTP; FASTQC; TRIMMOMATIC } from '../modules/local/qc_tools'
-include { BWA_ALIGN; BOWTIE2_ALIGN } from '../modules/local/aligners'
+include { BWA_ALIGN; BOWTIE2_ALIGN; SAMTOOLS_SORT_ALIGN } from '../modules/local/aligners'
 include { SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
 include { GFF_TO_BED } from '../modules/local/annotation_prep'
 include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam_tools'
@@ -90,10 +90,12 @@ workflow HAPFUN {
     // --- STEP 2: ALIGNMENT ---
     if (params.aligner == 'bwa-mem2') {
         BWA_ALIGN(ch_reads, ch_align_index, ref_prefix)
-        ch_bams = BWA_ALIGN.out.bam 
+        SAMTOOLS_SORT_ALIGN(BWA_ALIGN.out.sam)
+        ch_bams = SAMTOOLS_SORT_ALIGN.out.bam 
     } else {
         BOWTIE2_ALIGN(ch_reads, ch_align_index, ref_prefix)
-        ch_bams = BOWTIE2_ALIGN.out.bam 
+        SAMTOOLS_SORT_ALIGN(BOWTIE2_ALIGN.out.sam)
+        ch_bams = SAMTOOLS_SORT_ALIGN.out.bam 
     }
 
     // =========================================================
