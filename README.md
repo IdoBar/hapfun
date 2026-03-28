@@ -91,11 +91,22 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--trimmer`: `fastp` (default) or `trimmomatic`
 * `--aligner`: `bwa-mem2` (default) or `bowtie2`
 * `--caller`: `freebayes` (default) or `gatk`
-* `--ploidy`: Expected sample ploidy used by variant callers (Default: 2). Set to `1` for true haploid genomes, or higher values for polyploid organisms.
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--error_estimate`: `false` (default) or `true`
 
+**Tool Arguments & Parameters:**
+
+* `--ploidy`: Expected sample ploidy used by variant callers (Default: `2`). Set to `1` for true haploid genomes, or higher values for polyploid organisms.
+* `--fastp_args`: Additional arguments passed to Fastp (Default: empty).
+* `--trimmomatic_args`: Additional arguments passed to Trimmomatic (Default: `ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`).
+* `--bwa_args`: Additional arguments passed to BWA-mem2 (Default: empty).
+* `--bowtie2_args`: Additional arguments passed to Bowtie2 (Default: empty).
+* `--gatk_args`: Additional arguments passed to GATK HaplotypeCaller (Default: empty).
+* `--freebayes_args`: Additional arguments passed to Freebayes (Default: `--genotype-qualities`). Keep this flag enabled so `GQ` fields are emitted for downstream genotype-based filtering.
+
 **VCF Filtering:**
+
+Note: Genotype-based filtering relies on valid `GQ` fields. By default, HapFun enables Freebayes `--genotype-qualities` (via `--freebayes_args`) so genotype qualities are emitted and filtering behaves as expected.
 
 * `--filter_qual`: Minimum QUAL score (Default: 30)
 * `--filter_min_dp`: Minimum Depth (Default: 10)

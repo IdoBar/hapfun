@@ -64,8 +64,9 @@ process FREEBAYES_CALL_LIB {
     tuple val(meta), path("*.vcf.gz"), path("*.vcf.gz.tbi"), emit: vcf
 
     script:
+    def args = task.ext.args ?: ''
     """
-    freebayes -f $ref -p ${params.ploidy} $bam | bgzip > ${meta.id}_${meta.library}.vcf.gz
+    freebayes -f $ref -p ${params.ploidy} $args $bam | bgzip > ${meta.id}_${meta.library}.vcf.gz
     tabix ${meta.id}_${meta.library}.vcf.gz
     """
 }
