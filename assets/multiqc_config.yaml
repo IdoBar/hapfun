@@ -4,6 +4,9 @@ title: "HapFun"
 subtitle: "Haploid Fungal SNP Calling Pipeline"
 report_comment: "Automated QC, Alignment and Variant Calling Report"
 
+# Keep output paths deterministic for Nextflow output matching
+data_dir_name: "multiqc_data"
+
 # Order the report logically from reads -> alignments -> variants
 module_order:
   - fastp
