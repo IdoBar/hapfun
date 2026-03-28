@@ -148,9 +148,9 @@ workflow HAPFUN {
 
         // Compare library-level discordance before filtering.
         ch_vcfs_to_compare_raw = ch_lib_vcfs
-            .map { meta, vcf, idx -> tuple(meta.id, vcf) }
+            .map { meta, vcf, idx -> tuple(meta.id, vcf, idx) }
             .groupTuple(by: 0)
-            .map { id, vcfs -> tuple([id: id], 'raw', vcfs) }
+            .map { id, vcfs, idxs -> tuple([id: id], 'raw', vcfs, idxs) }
 
         VCF_MULTI_COMPARE_RAW(ch_vcfs_to_compare_raw, ch_vcf_compare_script)
 
@@ -163,10 +163,13 @@ workflow HAPFUN {
         }
         VCF_FILTER_LIB(ch_lib_vcfs_for_filter)
 
-        ch_vcfs_to_compare_filtered = VCF_FILTER_LIB.out.filtered_vcf
-            .map { meta, vcf -> tuple(meta.sample, vcf) }
+        ch_filtered_for_compare = VCF_FILTER_LIB.out.filtered_vcf
+            .join(VCF_FILTER_LIB.out.filtered_vcf_tbi, by: 0)
+            .map { meta, vcf, tbi -> tuple(meta.sample, vcf, tbi) }
+
+        ch_vcfs_to_compare_filtered = ch_filtered_for_compare
             .groupTuple(by: 0)
-            .map { id, vcfs -> tuple([id: id], 'filtered', vcfs) }
+            .map { id, vcfs, idxs -> tuple([id: id], 'filtered', vcfs, idxs) }
 
         VCF_MULTI_COMPARE_FILTERED(ch_vcfs_to_compare_filtered, ch_vcf_compare_script)
 

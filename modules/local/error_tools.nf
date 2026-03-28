@@ -77,7 +77,7 @@ process VCF_MULTI_COMPARE {
     container 'quay.io/biocontainers/mulled-v2-629aec3ba267b06a1efc3ec454c0f09e134f6ee2:3b083bb5eae6e491b8579589b070fa29afbea2a1-0'
 
     input:
-    tuple val(meta), val(compare_label), path(vcfs)
+    tuple val(meta), val(compare_label), path(vcfs), path(indexes)
     path compare_script
 
     output:

@@ -6,6 +6,7 @@ process VCF_FILTER {
     input: tuple val(meta), path(vcf)
     output:
         tuple val(meta), path("${meta.id}.Q${params.filter_qual}.poly.vcf.gz"), emit: filtered_vcf
+        tuple val(meta), path("${meta.id}.Q${params.filter_qual}.poly.vcf.gz.tbi"), emit: filtered_vcf_tbi
         tuple val(meta), path("${meta.id}.snps.Q${params.filter_qual}.poly.vcf.gz"), emit: snps_vcf
         tuple val(meta), path("${meta.id}.indels.Q${params.filter_qual}.poly.vcf.gz"), emit: indels_vcf
     def gt_filter_expr = params.mask_hetero ? "GT=='het' || " : ""
