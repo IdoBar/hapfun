@@ -6,6 +6,7 @@ include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam
 include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
 include { BCFTOOLS_MERGE } from '../modules/local/vcf_tools'
 include { MULTIQC } from '../modules/local/multiqc'
+include { POPGEN_ANALYSES } from '../modules/local/popgen'
 include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
 include { VCF_FILTER as VCF_FILTER_LIB; VCF_FILTER as VCF_FILTER_FINAL } from '../modules/local/vcf_filter'
 include { BCFTOOLS_STATS as BCFTOOLS_STATS_RAW; BCFTOOLS_STATS as BCFTOOLS_STATS_FILTERED } from '../modules/local/vcf_tools'
@@ -29,9 +30,10 @@ workflow HAPFUN {
     
     // 1. INPUT PARSING
     ch_input = Channel.fromPath(params.input).splitCsv(header:true).map { row -> 
-        def meta = [ id: row.sample, library: row.library, single_end: false ]
+        def meta = [ id: row.sample, library: row.library, pop: (row.pop ?: 'NA'), single_end: false ]
         tuple(meta, file(row.fq1), file(row.fq2)) 
     }
+    ch_samplesheet = Channel.value(file(params.input))
     
     def ref_file = file(params.ref)
     def ref_is_gz = ref_file.name.toLowerCase().endsWith('.gz')
@@ -240,6 +242,19 @@ workflow HAPFUN {
     ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_RAW.out.stats)
 
     VCF_FILTER_FINAL(ch_final_vcf)
+
+    if (params.popgen) {
+        ch_filtered_vcf_for_popgen = VCF_FILTER_FINAL.out.filtered_vcf.map { meta, vcf -> vcf }
+        POPGEN_ANALYSES(
+            ch_filtered_vcf_for_popgen,
+            ch_samplesheet,
+            Channel.value(params.popgen_tree_method),
+            Channel.value(params.popgen_legend_order)
+        )
+        ch_multiqc_reports = ch_multiqc_reports.mix(POPGEN_ANALYSES.out.pca_mqc)
+        ch_multiqc_reports = ch_multiqc_reports.mix(POPGEN_ANALYSES.out.tree_mqc)
+    }
+
     ch_filtered_vcf = VCF_FILTER_FINAL.out.filtered_vcf.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
 
     BCFTOOLS_STATS_FILTERED(ch_filtered_vcf)

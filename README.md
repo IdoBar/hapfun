@@ -29,8 +29,9 @@ By default, **HapFun** performs the following steps:
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
 7. **Error Estimation (Optional)**: If `--error_estimate true` is flagged, the pipeline automatically separates replicate libraries, calls variants on them independently, and calculates genotype discordance rates using a custom Python module. The raw per-library VCFs used in this comparison are also retained in `results/variants/error_estimate_libraries/`.
-8. **Variant Filtering**: Strictly filters VCFs based on Depth (DP), Quality (QUAL), and polymorphism, while recalculating INFO tags (`bcftools +fill-tags`). Outputs distinct `.snps.vcf` and `.indels.vcf` files.
-9. **Final Reporting**: Aggregates QC metrics across all steps into a single HTML report (`MultiQC`).
+8. **Population Genetics (Optional)**: If `--popgen true`, HapFun performs PCA (PC1-PC3) and constructs a phylogenetic tree from the final cohort VCF (regardless of variant caller and calling mode), then adds both panels to MultiQC. If a `pop` column is present in the samplesheet, it is used to color PCA markers and tree nodes.
+9. **Variant Filtering**: Strictly filters VCFs based on Depth (DP), Quality (QUAL), and polymorphism, while recalculating INFO tags (`bcftools +fill-tags`). Outputs distinct `.snps.vcf` and `.indels.vcf` files.
+10. **Final Reporting**: Aggregates QC metrics across all steps into a single HTML report (`MultiQC`).
 
 ## Quick Start
 
@@ -39,12 +40,13 @@ By default, **HapFun** performs the following steps:
    * *Note: Apptainer is only supported from Nextflow version 22.11.0-edge and later.*
 3. Create a `samplesheet.csv` with your input data.
     * *Note: Rows with the exact same `sample` ID but different `library` IDs will be automatically merged post-alignment.*
+    * *Optional: Add a `pop` column with population/group labels. This is used by the population genetics module to color PCA markers and phylogenetic tree nodes.*
 
     ```csv
-        sample,library,fq1,fq2
-        FungusA,Lib1,data/A_L1_1.fq.gz,data/A_L1_2.fq.gz
-        FungusA,Lib2,data/A_L2_1.fq.gz,data/A_L2_2.fq.gz
-        FungusB,Lib1,data/B_L1_1.fq.gz,data/B_L1_2.fq.gz
+        sample,library,pop,fq1,fq2
+        FungusA,Lib1,Pop_1,data/A_L1_1.fq.gz,data/A_L1_2.fq.gz
+        FungusA,Lib2,Pop_1,data/A_L2_1.fq.gz,data/A_L2_2.fq.gz
+        FungusB,Lib1,Pop_2,data/B_L1_1.fq.gz,data/B_L1_2.fq.gz
     ```
 
 4. Run the pipeline:
@@ -93,6 +95,9 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--caller`: `freebayes` (default) or `gatk`
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--error_estimate`: `false` (default) or `true`
+* `--popgen`: Run population genetics module (PCA + phylogenetic tree) from final cohort VCF and add to MultiQC (Default: `true`).
+* `--popgen_tree_method`: Tree construction method for population genetics (`upgma`, `nj`, `ml`, or `bayesian`, Default: `upgma`).
+* `--popgen_legend_order`: Population legend order for PCA/tree (`samplesheet` or `alphabetical`, Default: `samplesheet`).
 
 **Tool Arguments & Parameters:**
 
@@ -122,6 +127,7 @@ Upon completion, the `--outdir` will contain the following structured directorie
     ├── aligned/              # Final, merged, deduplicated BAM files
     ├── error_estimates/      # CSV reports of replicate discordance rates
     ├── multiqc/              # Aggregated HTML QC report
+    ├── population_genetics/  # PCA, phylogenetic tree, and intermediate population-genetics outputs
     ├── qc/                   # Individual QC reports (Fastp, FastQC, Qualimap, BCFtools)
     └── variants/
         ├── error_estimate_libraries/ # Raw per-library VCFs used for error-rate estimation (`--error_estimate true`)

@@ -62,7 +62,24 @@
           "enum": ["qc", "alignment", "call", "filter", "multiqc"],
           "default": "multiqc"
         },
-        "error_estimate": { "type": "boolean", "default": false }
+        "error_estimate": { "type": "boolean", "default": false },
+        "popgen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run population genetics analyses (PCA + phylogenetic tree) from the population VCF and add them to MultiQC."
+        },
+        "popgen_tree_method": {
+          "type": "string",
+          "enum": ["upgma", "nj", "ml", "bayesian"],
+          "default": "upgma",
+          "description": "Tree construction method for the population genetics module (distance-based: upgma/nj; model-based: ml/bayesian)."
+        },
+        "popgen_legend_order": {
+          "type": "string",
+          "enum": ["samplesheet", "alphabetical"],
+          "default": "samplesheet",
+          "description": "Population legend order in popgen plots. 'samplesheet' keeps first-seen order from input table."
+        }
       }
     }
   },
