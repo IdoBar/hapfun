@@ -43,10 +43,10 @@ By default, **HapFun** performs the following steps:
     * *Optional: Add a `pop` column with population/group labels. This is used by the population genetics module to color PCA markers and phylogenetic tree nodes.*
 
     ```csv
-        sample,library,pop,fq1,fq2
-        FungusA,Lib1,Pop_1,data/A_L1_1.fq.gz,data/A_L1_2.fq.gz
-        FungusA,Lib2,Pop_1,data/A_L2_1.fq.gz,data/A_L2_2.fq.gz
-        FungusB,Lib1,Pop_2,data/B_L1_1.fq.gz,data/B_L1_2.fq.gz
+        sample,library,fq1,fq2,pop
+        FungusA,Lib1,data/A_L1_1.fq.gz,data/A_L1_2.fq.gz,Pop_1
+        FungusA,Lib2,data/A_L2_1.fq.gz,data/A_L2_2.fq.gz,Pop_1
+        FungusB,Lib1,data/B_L1_1.fq.gz,data/B_L1_2.fq.gz,Pop_2
     ```
 
 4. Run the pipeline:
@@ -95,7 +95,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--caller`: `freebayes` (default) or `gatk`
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--error_estimate`: `false` (default) or `true`
-* `--popgen`: Run population genetics module (PCA + phylogenetic tree) from final cohort VCF and add to MultiQC (Default: `true`).
+* `--popgen`: Run population genetics module (PCA + phylogenetic tree) from final cohort VCF and add to MultiQC (Default: `false`).
 * `--popgen_tree_method`: Tree construction method for population genetics (`upgma`, `nj`, `ml`, or `bayesian`, Default: `upgma`).
 * `--popgen_legend_order`: Population legend order for PCA/tree (`samplesheet` or `alphabetical`, Default: `samplesheet`).
 
@@ -113,9 +113,9 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 
 Note: Genotype-based filtering relies on valid `GQ` fields. By default, HapFun enables Freebayes `--genotype-qualities` (via `--freebayes_args`) so genotype qualities are emitted and filtering behaves as expected.
 
-* `--filter_qual`: Minimum QUAL score (Default: 30)
-* `--filter_min_dp`: Minimum Depth (Default: 10)
-* `--filter_ind_dp`: Minimum individual genotype depth (Default: 7)
+* `--filter_qual`: Minimum QUAL score (Default: `30`)
+* `--filter_min_dp`: Minimum Depth (Default: `10`)
+* `--filter_ind_dp`: Minimum individual genotype depth (Default: `7`)
 * `--mask_hetero`: Mask heterozygous genotypes (`GT=='het'`) during filtering (Default: `true`). Requires diploid variant calling (`--ploidy 2`).
 
 ## Output Directory Structure
@@ -141,14 +141,15 @@ Upon completion, the `--outdir` will contain the following structured directorie
 
 HapFun utilizes the following open-source tools via [Bioconda](https://bioconda.github.io/) and [Biocontainers](https://biocontainers.pro/):
 
-* [Fastp](https://github.com/OpenGene/fastp) / [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) / [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
-* [BWA-mem2](https://github.com/bwa-mem2/bwa-mem2) / [Bowtie2](https://bowtie-mac.sourceforge.net/bowtie2/index.shtml)
-* [Samtools](http://www.htslib.org/) / [BCFtools](http://samtools.github.io/bcftools/)
-* [GATK4](https://gatk.broadinstitute.org/hc/en-us)
-* [Freebayes](https://github.com/freebayes/freebayes)
-* [BEDOPS](https://bedops.readthedocs.io/en/latest/) (gff2bed)
-* [Qualimap](http://qualimap.conesalab.org/)
-* [MultiQC](https://multiqc.info/)
+* [Fastp](https://github.com/OpenGene/fastp) [1.3.0] / [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) [0.12.1] / [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) [0.40]
+* [BWA-mem2](https://github.com/bwa-mem2/bwa-mem2) [2.3] / [Bowtie2](https://bowtie-mac.sourceforge.net/bowtie2/index.shtml) [2.5.5]
+* [Samtools](http://www.htslib.org/) [1.23.1] / [BCFtools](http://samtools.github.io/bcftools/) [1.23.1]
+* [GATK4](https://gatk.broadinstitute.org/hc/en-us) [4.6.2.0]
+* [Freebayes](https://github.com/freebayes/freebayes) [1.3.10]
+* [BEDOPS](https://bedops.readthedocs.io/en/latest/) [2.4.42] (gff2bed)
+* [Qualimap](http://qualimap.conesalab.org/) [2.3]
+* [MultiQC](https://multiqc.info/) [1.33]
+* [IQ-TREE](http://www.iqtree.org/) [2.4.0] / [MrBayes](http://nbisweden.github.io/MrBayes/) [3.2.7]
 
 *This pipeline leverages the module patterns and configuration standards developed by the nf-core community.*
 

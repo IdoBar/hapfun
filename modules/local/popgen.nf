@@ -33,10 +33,16 @@ def read_pop_map(path):
     with open(path, newline='') as fh:
         reader = csv.DictReader(fh)
         for row in reader:
-            sample = (row.get('sample') or '').strip()
+            # Normalize headers so we can match by name regardless of CSV column order or header casing/spacing.
+            norm_row = {
+                str(k).strip().lower(): (v if v is not None else '')
+                for k, v in row.items()
+                if k is not None
+            }
+            sample = str(norm_row.get('sample', '')).strip()
             if not sample:
                 continue
-            pop = (row.get('pop') or '').strip() or 'NA'
+            pop = str(norm_row.get('pop', '')).strip() or 'NA'
             if pop not in pop_first_seen:
                 pop_first_seen.append(pop)
             pop_map[sample] = pop
@@ -460,7 +466,7 @@ if tree_method not in ('upgma', 'nj', 'ml', 'bayesian'):
 if legend_order not in ('samplesheet', 'alphabetical'):
     raise RuntimeError(f"Unsupported popgen_legend_order: {legend_order}. Use 'samplesheet' or 'alphabetical'.")
 
-pop_map, pop_first_seen = read_pop_map('samplesheet.csv')
+pop_map, pop_first_seen = read_pop_map("${samplesheet}")
 
 vf = pysam.VariantFile('population.vcf.gz')
 samples = list(vf.header.samples)
