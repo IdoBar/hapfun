@@ -156,3 +156,28 @@ HapFun utilizes the following open-source tools via [Bioconda](https://bioconda.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributions and Support
+
+Contributions are welcome through pull requests and issue reports.
+
+* Bug reports and feature requests: [GitHub Issues](https://github.com/IdoBar/hapfun/issues)
+* Code contributions: [Pull Requests](https://github.com/IdoBar/hapfun/pulls)
+
+When reporting issues, please include:
+
+* The exact command used to run the pipeline
+* The profile and relevant parameter values
+* The failing process name and error log snippet
+* Your Nextflow version and execution environment (conda/docker/singularity/apptainer)
+
+## Citations
+
+If you use HapFun in your work, please cite the workflow framework and the software tools used in your run.
+
+The full bibliography for tools used in this pipeline is provided in [CITATIONS.md](CITATIONS.md).
+This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
+
+> **The nf-core framework for community-curated bioinformatics pipelines.**
+>
+> Ewels, P. A., Peltzer, A., Fillinger, S., Patel, H., Alneberg, J., Wilm, A., Garcia, M. U., Di Tommaso, P., & Nahnsen, S. (2020). The nf-core framework for community-curated bioinformatics pipelines. Nature Biotechnology, 38(3), 276-278. doi:10.1038/s41587-020-0439-x
