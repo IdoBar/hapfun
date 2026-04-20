@@ -265,8 +265,17 @@ workflow HAPFUN {
 
     VCF_FILTER_FINAL(ch_final_vcf)
 
+    ch_filter_out = VCF_FILTER_FINAL.out.filtered_vcf
+
+    ch_filtered_vcf = ch_filter_out.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
+
+    BCFTOOLS_STATS_FILTERED(ch_filtered_vcf)
+    ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_FILTERED.out.stats)
+
+    if (params.stop_at == 'filter') { return }
+    // --- STEP 5: POPULATION GENETICS ---
     if (params.popgen) {
-        ch_filtered_vcf_for_popgen = VCF_FILTER_FINAL.out.filtered_vcf.map { meta, vcf -> vcf }
+        ch_filtered_vcf_for_popgen = ch_filter_out.map { meta, vcf -> vcf }
         POPGEN_ANALYSES(
             ch_filtered_vcf_for_popgen,
             ch_samplesheet,
@@ -276,14 +285,7 @@ workflow HAPFUN {
         ch_multiqc_reports = ch_multiqc_reports.mix(POPGEN_ANALYSES.out.pca_mqc)
         ch_multiqc_reports = ch_multiqc_reports.mix(POPGEN_ANALYSES.out.tree_mqc)
     }
-
-    ch_filtered_vcf = VCF_FILTER_FINAL.out.filtered_vcf.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
-
-    BCFTOOLS_STATS_FILTERED(ch_filtered_vcf)
-    ch_multiqc_reports = ch_multiqc_reports.mix(BCFTOOLS_STATS_FILTERED.out.stats)
-
-    if (params.stop_at == 'filter') { return }
-    
+    if (params.stop_at == 'popgen') { return }
     // --- FINAL STEP: MULTIQC ---
     
     // Pass config and logo so both are staged in the work directory
