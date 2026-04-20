@@ -29,9 +29,31 @@ workflow HAPFUN {
     }
     
     // 1. INPUT PARSING
-    ch_input = Channel.fromPath(params.input).splitCsv(header:true).map { row -> 
-        def meta = [ id: row.sample, library: row.library, pop: (row.pop ?: 'NA'), single_end: false ]
-        tuple(meta, file(row.fq1), file(row.fq2)) 
+    ch_input = Channel.fromPath(params.input).splitCsv(header:true).map { row ->
+        def norm = row.collectEntries { key, value ->
+            def normKey = key == null ? null : key.toString().trim().toLowerCase()
+            def normValue = value == null ? '' : value.toString().trim()
+            [(normKey): normValue]
+        }.findAll { key, value -> key != null }
+
+        def sampleId = norm.sample
+        def libraryId = norm.library
+        def fq1 = norm.fq1
+        def fq2 = norm.fq2
+        def rowPreview = row.collect { key, value -> "${key}=${value}" }.join(', ')
+
+        if (!sampleId) {
+            error "Samplesheet row is missing required 'sample' value: ${rowPreview}"
+        }
+        if (!libraryId) {
+            error "Samplesheet row is missing required 'library' value: ${rowPreview}"
+        }
+        if (!fq1 || !fq2) {
+            error "Samplesheet row is missing required 'fq1'/'fq2' value: ${rowPreview}"
+        }
+
+        def meta = [ id: sampleId, library: libraryId, unit_id: libraryId, pop: (norm.pop ?: 'NA'), single_end: false ]
+        tuple(meta, file(fq1), file(fq2))
     }
     ch_samplesheet = Channel.value(file(params.input))
     

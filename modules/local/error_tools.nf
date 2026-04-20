@@ -1,7 +1,7 @@
 // Save as: modules/local/error_tools.nf
 
 process MARK_DUPLICATES_LIB {
-    tag "${meta.id}_${meta.library}"
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
     label 'process_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
@@ -14,18 +14,19 @@ process MARK_DUPLICATES_LIB {
     path "*.metrics.txt", emit: metrics
 
     script:
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
     gatk MarkDuplicates \\
         -I $bam \\
-        -O ${meta.id}_${meta.library}.dedup.bam \\
-        -M ${meta.id}_${meta.library}.metrics.txt \\
+        -O ${unitId}.dedup.bam \\
+        -M ${unitId}.metrics.txt \\
         --CREATE_INDEX true \\
         --READ_NAME_REGEX null
     """
 }
 
 process GATK_CALL_LIB {
-    tag "${meta.id}_${meta.library}"
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
     label 'process_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
@@ -40,17 +41,18 @@ process GATK_CALL_LIB {
     tuple val(meta), path("*.vcf.gz"), path("*.vcf.gz.tbi"), emit: vcf
 
     script:
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
     gatk --java-options "-Xmx${task.memory.toGiga()}g" HaplotypeCaller \\
         -R $ref \\
         -I $bam \\
-        -O ${meta.id}_${meta.library}.vcf.gz \\
+        -O ${unitId}.vcf.gz \\
         -ploidy ${params.ploidy}
     """
 }
 
 process FREEBAYES_CALL_LIB {
-    tag "${meta.id}_${meta.library}"
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
     label 'process_medium'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
@@ -65,9 +67,10 @@ process FREEBAYES_CALL_LIB {
 
     script:
     def args = task.ext.args ?: ''
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
-    freebayes -f $ref -p ${params.ploidy} $args $bam | bgzip > ${meta.id}_${meta.library}.vcf.gz
-    tabix ${meta.id}_${meta.library}.vcf.gz
+    freebayes -f $ref -p ${params.ploidy} $args $bam | bgzip > ${unitId}.vcf.gz
+    tabix ${unitId}.vcf.gz
     """
 }
 

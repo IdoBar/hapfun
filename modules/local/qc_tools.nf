@@ -1,7 +1,7 @@
 // Save as: modules/local/qc_tools.nf
 
 process FASTP {
-    tag "$meta.id"
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
     label 'process_medium'
     conda "bioconda::fastp=1.3.0"
     container 'quay.io/biocontainers/fastp:1.3.0--h43da1c4_0'
@@ -14,8 +14,9 @@ process FASTP {
         path "*.html", emit: html
     script:
     def args = task.ext.args ?: ''
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
-    fastp --in1 $read1 --in2 $read2 --out1 ${meta.id}_${meta.library}_1.fastp.fq.gz --out2 ${meta.id}_${meta.library}_2.fastp.fq.gz --json ${meta.id}_${meta.library}.fastp.json --html ${meta.id}_${meta.library}.fastp.html --thread ${task.cpus} $args
+    fastp --in1 $read1 --in2 $read2 --out1 ${unitId}_1.fastp.fq.gz --out2 ${unitId}_2.fastp.fq.gz --json ${unitId}.fastp.json --html ${unitId}.fastp.html --thread ${task.cpus} $args
     """
 }
 
@@ -36,7 +37,7 @@ process FASTQC {
 }
 
 process TRIMMOMATIC {
-    tag "$meta.id"
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
     label 'process_medium'
     conda "bioconda::trimmomatic=0.40"
     container 'quay.io/biocontainers/trimmomatic:0.40--hdfd78af_0'
@@ -49,12 +50,13 @@ process TRIMMOMATIC {
         
     script:
     def args = task.ext.args ?: ''
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
     trimmomatic PE -threads ${task.cpus} \\
     $read1 $read2 \
-    ${meta.id}_${meta.library}_1.paired.fq.gz ${meta.id}_${meta.library}_1.unpaired.fq.gz \\
-    ${meta.id}_${meta.library}_2.paired.fq.gz ${meta.id}_${meta.library}_2.unpaired.fq.gz \\
+    ${unitId}_1.paired.fq.gz ${unitId}_1.unpaired.fq.gz \\
+    ${unitId}_2.paired.fq.gz ${unitId}_2.unpaired.fq.gz \\
     $args \\
-    2> ${meta.id}_${meta.library}.trim.log
+    2> ${unitId}.trim.log
     """
 }
