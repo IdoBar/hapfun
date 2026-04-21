@@ -12,6 +12,23 @@ process BCFTOOLS_MERGE {
     """
 }
 
+process BCFTOOLS_CONCAT {
+    label 'process_medium'
+    conda "bioconda::bcftools=1.23.1"
+    container 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'
+    input:
+        tuple path(vcfs), path(tbis)
+    output:
+        path "population.vcf.gz", emit: vcf
+        path "population.vcf.gz.tbi", emit: tbi
+    script:
+    """
+    printf '%s\n' $vcfs > vcf_list.txt
+    bcftools concat -f vcf_list.txt -Oz -o population.vcf.gz
+    tabix -p vcf population.vcf.gz
+    """
+}
+
 process BCFTOOLS_STATS {
     tag "$meta.id"
     label 'process_low'

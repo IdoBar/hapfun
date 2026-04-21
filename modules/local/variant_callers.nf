@@ -12,26 +12,35 @@ process FREEBAYES {
         path "${meta.id}.vcf.gz.tbi", emit: tbi
     script:
     def args = task.ext.args ?: ''
+    def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
+    def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
     """
-    freebayes -f $ref -p ${params.ploidy} $args $bam | bgzip > ${meta.id}.vcf.gz
-    tabix ${meta.id}.vcf.gz
+    awk '{ print \$1 ":1-" \$2 }' $ref_idx > chromosome_regions.txt
+
+    freebayes-parallel chromosome_regions.txt ${threads} -f $ref -p ${params.ploidy} $args $bam | bgzip -c > ${meta.id}.vcf.gz
+    tabix -p vcf ${meta.id}.vcf.gz
     """
 }
 
 process FREEBAYES_POPULATION {
-    label 'process_high'
+    tag "$meta.id"
+    label 'process_medium'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
-        path bams
-        path bais
-        path ref
-        path ref_idx
-    output: path "population.vcf.gz", emit: vcf
+        tuple val(meta), path(region_file), path(bams), path(bais), path(ref), path(ref_idx)
+    output:
+        tuple val(meta), path("${meta.id}.vcf.gz"), path("${meta.id}.vcf.gz.tbi"), emit: vcf
     script:
     def args = task.ext.args ?: ''
+    def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
+    def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
+    def bamListText = bams.collect { it.getName() }.join('\n')
     """
-    freebayes -f $ref -p ${params.ploidy} $args $bams | bgzip > population.vcf.gz
+    printf '%s\n' ${bamListText.split('\n').collect { "'${it}'" }.join(' ')} > bam_list.txt
+
+    freebayes-parallel $region_file ${threads} -f $ref -p ${params.ploidy} $args -L bam_list.txt | bgzip -c > ${meta.id}.vcf.gz
+    tabix -p vcf ${meta.id}.vcf.gz
     """
 }
 
@@ -52,14 +61,36 @@ process GATK_HAPLOTYPECALLER {
 
     script:
     def args = task.ext.args ?: ''
+    def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
+    def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
     """
-    gatk --java-options "-Xmx${task.memory.toGiga()}g" HaplotypeCaller \\
-        -R $ref \\
-        -I $bam \\
-        -O ${meta.id}.g.vcf.gz \\
-        -ERC GVCF \\
-        -ploidy ${params.ploidy} \\
-        $args
+    awk '{ print \$1 }' $ref_idx > chromosomes.txt
+
+    max_jobs=${threads}
+    while IFS= read -r chrom; do
+        (
+            gatk --java-options "-Xmx${task.memory.toGiga()}g" HaplotypeCaller \\
+                -R $ref \\
+                -I $bam \\
+                -L "$chrom" \\
+                -O "${chrom}.g.vcf.gz" \\
+                -ERC GVCF \\
+                -ploidy ${params.ploidy} \\
+                --native-pair-hmm-threads 1 \\
+                $args
+            tabix -p vcf "${chrom}.g.vcf.gz"
+        ) &
+
+        while [ "$(jobs -pr | wc -l)" -ge "$max_jobs" ]; do
+            wait -n
+        done
+    done < chromosomes.txt
+
+    wait
+
+    gather_args=$(awk '{ printf " -I %s.g.vcf.gz", \$1 }' chromosomes.txt)
+    gatk --java-options "-Xmx${task.memory.toGiga()}g" GatherVcfs $gather_args -O ${meta.id}.g.vcf.gz
+    tabix -p vcf ${meta.id}.g.vcf.gz
     """
 }
 

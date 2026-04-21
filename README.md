@@ -28,6 +28,7 @@ By default, **HapFun** performs the following steps:
 5. **Alignment QC**: `Qualimap` (Supports optional `.gff`/`.bed` annotations for targeted region metrics).
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
+    * *Population mode splits the reference `.fai` into chromosome shards, launches one `freebayes-parallel` task per chromosome using a staged `bam_list.txt`, and concatenates the shard VCFs with `bcftools concat`.*
 7. **Error Estimation (Optional)**: If `--error_estimate true` is flagged, the pipeline automatically separates replicate libraries, calls variants on them independently, and calculates genotype discordance rates using a custom Python module. The raw per-library VCFs used in this comparison are also retained in `results/variants/error_estimate_libraries/`.
 8. **Population Genetics (Optional)**: If `--popgen true`, HapFun performs PCA (PC1-PC3) and constructs a phylogenetic tree from the final cohort VCF (regardless of variant caller and calling mode), then adds both panels to MultiQC. If a `pop` column is present in the samplesheet, it is used to color PCA markers and tree nodes.
 9. **Variant Filtering**: Strictly filters VCFs based on Depth (DP), Quality (QUAL), and polymorphism, while recalculating INFO tags (`bcftools +fill-tags`). Outputs distinct `.snps.vcf` and `.indels.vcf` files.
@@ -107,7 +108,8 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--bwa_args`: Additional arguments passed to BWA-mem2 (Default: empty).
 * `--bowtie2_args`: Additional arguments passed to Bowtie2 (Default: empty).
 * `--gatk_args`: Additional arguments passed to GATK HaplotypeCaller (Default: empty).
-* `--freebayes_args`: Additional arguments passed to Freebayes (Default: `--genotype-qualities`). Keep this flag enabled so `GQ` fields are emitted for downstream genotype-based filtering.
+* `--freebayes_args`: Additional arguments passed to Freebayes (Default: `--genotype-qualities`). Keep this flag enabled so `GQ` fields are emitted for downstream genotype-based filtering. In population mode, these arguments are forwarded to each chromosome-level `freebayes-parallel` task.
+* `--caller_inner_threads`: Maximum within-task chromosome fan-out for `FREEBAYES`, `FREEBAYES_POPULATION`, and `GATK_HAPLOTYPECALLER` (Default: `4`). Effective threads per task are `min(task.cpus, caller_inner_threads)`.
 
 **VCF Filtering:**
 
@@ -133,7 +135,7 @@ Upon completion, the `--outdir` will contain the following structured directorie
         ├── error_estimate_libraries/ # Raw per-library VCFs used for error-rate estimation (`--error_estimate true`)
         ├── individual/       # Raw per-sample VCFs (if using individual mode)
         ├── merged/           # Raw aggregated VCF (if using individual mode)
-        ├── population/       # Raw aggregated VCF (from Freebayes population mode)
+        ├── population/       # Raw aggregated VCF from chromosome-parallel Freebayes population mode
         └── filtered/         # FINAL processed VCFs (SNPs, Indels, and combined)
 ```
 

@@ -29,6 +29,12 @@
           "type": "string",
           "default": "--genotype-qualities",
           "description": "Additional arguments passed to Freebayes. Includes --genotype-qualities by default so GQ fields are emitted for downstream filtering."
+        },
+        "caller_inner_threads": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 1,
+          "description": "Maximum within-task chromosome parallelism for FREEBAYES, FREEBAYES_POPULATION, and GATK_HAPLOTYPECALLER. Effective value per task is min(task.cpus, caller_inner_threads)."
         }
       }
     },

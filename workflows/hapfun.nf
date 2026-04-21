@@ -2,9 +2,10 @@ include { FASTP; FASTQC; TRIMMOMATIC } from '../modules/local/qc_tools'
 include { BWA_ALIGN; BOWTIE2_ALIGN; SAMTOOLS_SORT_ALIGN } from '../modules/local/aligners'
 include { DECOMPRESS_FASTA; SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
 include { GFF_TO_BED } from '../modules/local/annotation_prep'
+include { FREEBAYES_SPLIT_REGIONS } from '../modules/local/genome_regions'
 include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam_tools'
 include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
-include { BCFTOOLS_MERGE } from '../modules/local/vcf_tools'
+include { BCFTOOLS_MERGE; BCFTOOLS_CONCAT } from '../modules/local/vcf_tools'
 include { MULTIQC } from '../modules/local/multiqc'
 include { POPGEN_ANALYSES } from '../modules/local/popgen'
 include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
@@ -67,7 +68,7 @@ workflow HAPFUN {
         ch_ref = DECOMPRESS_FASTA.out.fasta
         ref_prefix = 'reference.decompressed.fa'
     } else {
-        ch_ref = ref_file
+        ch_ref = Channel.value(ref_file)
         ref_prefix = ref_file.name
     }
     
@@ -247,8 +248,37 @@ workflow HAPFUN {
     } else if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
         ch_all_bams = MARK_DUPLICATES.out.dedup_bam.map{ it[1] }.collect()
         ch_all_bais = MARK_DUPLICATES.out.dedup_bam.map{ it[2] }.collect()
-        FREEBAYES_POPULATION(ch_all_bams, ch_all_bais, ch_ref, ch_ref_fai)
-        ch_final_vcf = FREEBAYES_POPULATION.out.vcf.map { vcf -> tuple([id: "population"], vcf) }
+        FREEBAYES_SPLIT_REGIONS(ch_ref_fai)
+
+        ch_population_regions = FREEBAYES_SPLIT_REGIONS.out.regions.map { region_file ->
+            def match = (region_file.baseName =~ /^(\d+)__(.+)$/)
+            assert match.matches(): "Unexpected region shard name: ${region_file.baseName}"
+            def order = match[0][1] as Integer
+            def chrom = match[0][2]
+            tuple([id: chrom, order: order], region_file)
+        }
+
+        ch_population_jobs = ch_population_regions
+            .combine(ch_all_bams)
+            .map { region_tuple, bams -> tuple(region_tuple[0], region_tuple[1], bams) }
+            .combine(ch_all_bais)
+            .map { left, bais -> tuple(left[0], left[1], left[2], bais) }
+            .combine(ch_ref)
+            .map { left, ref -> tuple(left[0], left[1], left[2], left[3], ref) }
+            .combine(ch_ref_fai)
+            .map { left, ref_idx -> tuple(left[0], left[1], left[2], left[3], left[4], ref_idx) }
+
+        FREEBAYES_POPULATION(ch_population_jobs)
+
+        ch_population_concat_inputs = FREEBAYES_POPULATION.out.vcf
+            .collect()
+            .map { shards ->
+                def sorted = shards.sort { left, right -> left[0].order <=> right[0].order }
+                tuple(sorted.collect { it[1] }, sorted.collect { it[2] })
+            }
+
+        BCFTOOLS_CONCAT(ch_population_concat_inputs)
+        ch_final_vcf = BCFTOOLS_CONCAT.out.vcf.map { vcf -> tuple([id: "population"], vcf) }
         
     } else {
         // Fallback: Individual Freebayes calling & standard merging
