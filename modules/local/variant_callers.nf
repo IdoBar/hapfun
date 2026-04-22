@@ -59,25 +59,25 @@ process GATK_HAPLOTYPECALLER {
     output:
     tuple val(meta), path("*.g.vcf.gz"), path("*.g.vcf.gz.tbi"), emit: gvcf
 
-    script:
+    shell:
     def args = task.ext.args ?: ''
     def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
     def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
-    """
-    awk '{ print \$1 }' $ref_idx > chromosomes.txt
+    '''
+    awk '{ print $1 }' !{ref_idx} > chromosomes.txt
 
-    max_jobs=${threads}
+    max_jobs=!{threads}
     while IFS= read -r chrom; do
         (
-            gatk --java-options "-Xmx${task.memory.toGiga()}g" HaplotypeCaller \\
-                -R $ref \\
-                -I $bam \\
-                -L "$chrom" \\
-                -O "${chrom}.g.vcf.gz" \\
-                -ERC GVCF \\
-                -ploidy ${params.ploidy} \\
-                --native-pair-hmm-threads 1 \\
-                $args
+            gatk --java-options "-Xmx!{task.memory.toGiga()}g" HaplotypeCaller \
+                -R !{ref} \
+                -I !{bam} \
+                -L "$chrom" \
+                -O "${chrom}.g.vcf.gz" \
+                -ERC GVCF \
+                -ploidy !{params.ploidy} \
+                --native-pair-hmm-threads 1 \
+                !{args}
             tabix -p vcf "${chrom}.g.vcf.gz"
         ) &
 
@@ -88,10 +88,10 @@ process GATK_HAPLOTYPECALLER {
 
     wait
 
-    gather_args=$(awk '{ printf " -I %s.g.vcf.gz", \$1 }' chromosomes.txt)
-    gatk --java-options "-Xmx${task.memory.toGiga()}g" GatherVcfs $gather_args -O ${meta.id}.g.vcf.gz
-    tabix -p vcf ${meta.id}.g.vcf.gz
-    """
+    gather_args=$(awk '{ printf " -I %s.g.vcf.gz", $1 }' chromosomes.txt)
+    gatk --java-options "-Xmx!{task.memory.toGiga()}g" GatherVcfs $gather_args -O !{meta.id}.g.vcf.gz
+    tabix -p vcf !{meta.id}.g.vcf.gz
+    '''
 }
 
 process GATK_COMBINEGVCFS {
