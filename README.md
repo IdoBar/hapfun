@@ -60,7 +60,7 @@ By default, **HapFun** performs the following steps:
             --outdir results
     ```
 
-    *Swap `-profile conda` with `-profile docker` or `-profile singularity` `-profile apptainer` depending on your environment.*
+    *Swap `-profile conda` with `-profile docker` or `-profile singularity` or `-profile apptainer` depending on your environment.*
 
 ## Advanced Usage
 
