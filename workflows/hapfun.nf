@@ -246,29 +246,37 @@ workflow HAPFUN {
         ch_final_vcf = GATK_GENOTYPEGVCFS.out.vcf.map { vcf -> tuple([id: "gatk_joint"], vcf) }
         
     } else if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
-        ch_all_bams = MARK_DUPLICATES.out.dedup_bam.map{ it[1] }.collect()
-        ch_all_bais = MARK_DUPLICATES.out.dedup_bam.map{ it[2] }.collect()
+        // Collect bams and bais together as a (bam_list, bai_list) pair.
+        // Keeping them as a 2-element tuple prevents combine from flattening
+        // the collected lists into the output channel as individual elements.
+        ch_bam_bai_pair = MARK_DUPLICATES.out.dedup_bam
+            .map { meta, bam, bai -> tuple(bam, bai) }
+            .collect()
+            .map { pairs ->
+                def bams = pairs.collect { it[0] }
+                def bais = pairs.collect { it[1] }
+                tuple(bams, bais)
+            }
+
         FREEBAYES_SPLIT_REGIONS(ch_ref_fai)
 
         ch_population_regions = FREEBAYES_SPLIT_REGIONS.out.regions
             .flatten()
             .map { region_file ->
-            def match = (region_file.baseName =~ /^(\d+)__(.+)\.regions$/)
-            assert match.matches(): "Unexpected region shard name: ${region_file.baseName}"
-            def order = match[0][1] as Integer
-            def chrom = match[0][2]
-            tuple([id: chrom, order: order], region_file)
-        }
+                def match = (region_file.baseName =~ /^(\d+)__(.+)\.regions$/)
+                assert match.matches(): "Unexpected region shard name: ${region_file.baseName}"
+                def order = match[0][1] as Integer
+                def chrom = match[0][2]
+                tuple([id: chrom, order: order], region_file)
+            }
 
         ch_population_jobs = ch_population_regions
-            .combine(ch_all_bams)
-            .map { region_tuple, bams -> tuple(region_tuple[0], region_tuple[1], bams) }
-            .combine(ch_all_bais)
-            .map { left, bais -> tuple(left[0], left[1], left[2], bais) }
+            .combine(ch_bam_bai_pair)
             .combine(ch_ref)
-            .map { left, ref -> tuple(left[0], left[1], left[2], left[3], ref) }
             .combine(ch_ref_fai)
-            .map { left, ref_idx -> tuple(left[0], left[1], left[2], left[3], left[4], ref_idx) }
+            .map { meta, region_file, bams, bais, ref, ref_idx ->
+                tuple(meta, region_file, bams, bais, ref, ref_idx)
+            }
 
         FREEBAYES_POPULATION(ch_population_jobs)
 
