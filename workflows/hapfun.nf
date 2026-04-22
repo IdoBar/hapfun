@@ -250,8 +250,10 @@ workflow HAPFUN {
         ch_all_bais = MARK_DUPLICATES.out.dedup_bam.map{ it[2] }.collect()
         FREEBAYES_SPLIT_REGIONS(ch_ref_fai)
 
-        ch_population_regions = FREEBAYES_SPLIT_REGIONS.out.regions.map { region_file ->
-            def match = (region_file.baseName =~ /^(\d+)__(.+)$/)
+        ch_population_regions = FREEBAYES_SPLIT_REGIONS.out.regions
+            .flatten()
+            .map { region_file ->
+            def match = (region_file.baseName =~ /^(\d+)__(.+)\.regions$/)
             assert match.matches(): "Unexpected region shard name: ${region_file.baseName}"
             def order = match[0][1] as Integer
             def chrom = match[0][2]
