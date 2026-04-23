@@ -246,17 +246,14 @@ workflow HAPFUN {
         ch_final_vcf = GATK_GENOTYPEGVCFS.out.vcf.map { vcf -> tuple([id: "gatk_joint"], vcf) }
         
     } else if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
-        // Collect bams and bais together as a (bam_list, bai_list) pair.
-        // Keeping them as a 2-element tuple prevents combine from flattening
-        // the collected lists into the output channel as individual elements.
-        ch_bam_bai_pair = MARK_DUPLICATES.out.dedup_bam
-            .map { meta, bam, bai -> tuple(bam, bai) }
+        // Collect cohort BAM/BAI files directly from MARK_DUPLICATES outputs.
+        ch_population_bams = MARK_DUPLICATES.out.dedup_bam
+            .map { meta, bam, bai -> bam }
             .collect()
-            .map { pairs ->
-                def bams = pairs.collect { it[0] }
-                def bais = pairs.collect { it[1] }
-                tuple(bams, bais)
-            }
+
+        ch_population_bais = MARK_DUPLICATES.out.dedup_bam
+            .map { meta, bam, bai -> bai }
+            .collect()
 
         FREEBAYES_SPLIT_REGIONS(ch_ref_fai)
 
@@ -271,7 +268,8 @@ workflow HAPFUN {
             }
 
         ch_population_jobs = ch_population_regions
-            .combine(ch_bam_bai_pair)
+            .combine(ch_population_bams)
+            .combine(ch_population_bais)
             .combine(ch_ref)
             .combine(ch_ref_fai)
             .map { meta, region_file, bams, bais, ref, ref_idx ->
