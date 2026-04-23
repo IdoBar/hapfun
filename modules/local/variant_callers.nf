@@ -24,7 +24,7 @@ process FREEBAYES {
 
 process FREEBAYES_POPULATION {
     tag "$meta.id"
-    label 'mc_large'
+    label 'mc_xlarge'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
