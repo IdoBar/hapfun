@@ -42,6 +42,10 @@ Please cite the workflow framework and relevant software used in your analysis.
 
 > McKenna, A., Hanna, M., Banks, E., Sivachenko, A., Cibulskis, K., Kernytsky, A., ... DePristo, M. A. (2010). The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Research, 20(9), 1297-1303. doi:10.1101/gr.107524.110
 
+### [biobambam2](https://gitlab.com/german.tischler/biobambam2)
+
+> Tischler, G., & Leonard, S. (2014). Biobambam: Tools for read pair collation based algorithms on BAM files. Source Code for Biology and Medicine, 9(1), 13. doi:10.1186/1751-0473-9-13
+
 ### [FreeBayes](https://github.com/freebayes/freebayes)
 
 > Garrison, E., & Marth, G. (2012). Haplotype-based variant detection from short-read sequencing. arXiv:1207.3907.

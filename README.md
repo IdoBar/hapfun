@@ -148,6 +148,7 @@ HapFun utilizes the following open-source tools via [Bioconda](https://bioconda.
 * [BWA-mem2](https://github.com/bwa-mem2/bwa-mem2) [2.3] / [Bowtie2](https://bowtie-mac.sourceforge.net/bowtie2/index.shtml) [2.5.5]
 * [Samtools](http://www.htslib.org/) [1.23.1] / [BCFtools](http://samtools.github.io/bcftools/) [1.23.1]
 * [GATK4](https://gatk.broadinstitute.org/hc/en-us) [4.6.2.0]
+* [biobambam2 (bamsormadup)](https://gitlab.com/german.tischler/biobambam2) [2.0.185]
 * [Freebayes](https://github.com/freebayes/freebayes) [1.3.10]
 * [BEDOPS](https://bedops.readthedocs.io/en/latest/) [2.4.42] (gff2bed)
 * [Qualimap](http://qualimap.conesalab.org/) [2.3]
