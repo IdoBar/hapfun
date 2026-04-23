@@ -289,11 +289,9 @@ workflow HAPFUN {
         FREEBAYES_POPULATION(ch_population_jobs)
 
         ch_population_concat_inputs = FREEBAYES_POPULATION.out.vcf
-            .collect()
-            .map { shards ->
-                def sorted = shards.sort { left, right -> left[0].order <=> right[0].order }
-                tuple(sorted.collect { it[1] }, sorted.collect { it[2] })
-            }
+            .map { meta, vcf, tbi -> tuple(vcf, tbi) }
+            .toList()
+            .map { shards -> tuple(shards.collect { it[0] }, shards.collect { it[1] }) }
 
         BCFTOOLS_CONCAT(ch_population_concat_inputs)
         ch_final_vcf = BCFTOOLS_CONCAT.out.vcf.map { vcf -> tuple([id: "population"], vcf) }
