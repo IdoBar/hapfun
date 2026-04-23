@@ -308,7 +308,7 @@ def run_mrbayes():
         fh.write('execute popgen_alignment.nex;\\n')
         fh.write('begin mrbayes;\\n')
         fh.write('  set autoclose=yes nowarn=yes;\\n')
-        fh.write('  lset coding=variable;\n')
+        fh.write('  lset coding=variable;\\n')
         fh.write('  lset nst=6 rates=gamma;\\n')
         fh.write('  mcmcp ngen=10000 samplefreq=100 printfreq=100 diagnfreq=500 nchains=4 burninfrac=0.25;\\n')
         fh.write('  mcmc;\\n')

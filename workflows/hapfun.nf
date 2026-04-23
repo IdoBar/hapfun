@@ -264,11 +264,8 @@ workflow HAPFUN {
         ch_population_regions = FREEBAYES_SPLIT_REGIONS.out.regions
             .flatten()
             .map { region_file ->
-                def match = (region_file.baseName =~ /^(\d+)__(.+)\.regions$/)
-                assert match.matches(): "Unexpected region shard name: ${region_file.baseName}"
-                def order = match[0][1] as Integer
-                def chrom = match[0][2]
-                tuple([id: chrom, order: order], region_file)
+                def chrom = region_file.baseName.replaceAll(/\.regions$/, '')
+                tuple([id: chrom], region_file)
             }
 
         ch_population_jobs = ch_population_regions
