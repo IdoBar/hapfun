@@ -6,7 +6,8 @@ process MULTIQC {
     container 'quay.io/biocontainers/multiqc:1.33--pyhdfd78af_0'
 
     input: 
-    path multiqc_files
+    // Keep each staged input under a unique subfolder to avoid basename collisions.
+    path multiqc_files, stageAs: 'multiqc_inputs??/*'
     path multiqc_config
     path multiqc_logo   // staged alongside config so relative path in YAML resolves
 

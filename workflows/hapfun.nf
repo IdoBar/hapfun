@@ -80,6 +80,7 @@ workflow HAPFUN {
     ch_multiqc_config = file(params.multiqc_config)
     ch_multiqc_logo   = file("$projectDir/assets/hapfun.png")
     ch_vcf_compare_script = Channel.value(file("$projectDir/bin/vcf_multi_compare.py"))
+    ch_popgen_script = Channel.value(file("$projectDir/bin/popgen_analyses.py"))
 
     // --- STEP 1: QC ---
     if (params.start_step == 'qc') {
@@ -346,7 +347,8 @@ workflow HAPFUN {
             ch_filtered_vcf_for_popgen,
             ch_samplesheet,
             Channel.value(params.popgen_tree_method),
-            Channel.value(params.popgen_legend_order)
+            Channel.value(params.popgen_legend_order),
+            ch_popgen_script
         )
         ch_multiqc_reports = ch_multiqc_reports.mix(POPGEN_ANALYSES.out.pca_mqc)
         ch_multiqc_reports = ch_multiqc_reports.mix(POPGEN_ANALYSES.out.tree_mqc)
