@@ -28,7 +28,7 @@ process FREEBAYES_POPULATION {
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
-        tuple val(meta), path(region_file), path(bams), path(bais), path(ref), path(ref_idx)
+        tuple val(meta), path(region_file), val(bams), val(bais), path(ref), path(ref_idx)
     output:
         tuple val(meta), path("${meta.id}.vcf.gz"), path("${meta.id}.vcf.gz.tbi"), emit: vcf
     script:

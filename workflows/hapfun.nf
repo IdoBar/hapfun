@@ -246,6 +246,15 @@ workflow HAPFUN {
         ch_final_vcf = GATK_GENOTYPEGVCFS.out.vcf.map { vcf -> tuple([id: "gatk_joint"], vcf) }
         
     } else if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
+        def normaliseInputPath = { p ->
+            def uri = p.toUri()
+            if (uri?.scheme == 'scratch') {
+                def authorityPart = uri.authority ? "/${uri.authority}" : ''
+                return "/${uri.scheme}${authorityPart}${uri.path}"
+            }
+            return p.toString()
+        }
+
         // Collect bams and bais together as a (bam_list, bai_list) pair.
         // Keeping them as a 2-element tuple prevents combine from flattening
         // the collected lists into the output channel as individual elements.
@@ -253,8 +262,8 @@ workflow HAPFUN {
             .map { meta, bam, bai -> tuple(bam, bai) }
             .collect()
             .map { pairs ->
-                def bams = pairs.collect { it[0] }
-                def bais = pairs.collect { it[1] }
+                def bams = pairs.collect { normaliseInputPath(it[0]) }
+                def bais = pairs.collect { normaliseInputPath(it[1]) }
                 tuple(bams, bais)
             }
 
