@@ -36,8 +36,8 @@ process FREEBAYES_POPULATION {
     def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
     def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
     """
-    find . -type l -name '*.bam' | sort > bam_list.txt
-    # [ -s bam_list.txt ] || { echo 'No satged BAM inputs discovered under staged bams?? inputs' >&2; exit 1; }
+    find -L . -type f -name '*.bam' | sort > bam_list.txt
+    [ -s bam_list.txt ] || { echo 'No staged BAM inputs discovered for FREEBAYES_POPULATION' >&2; exit 1; }
 
     freebayes-parallel $region_file ${threads} -f $ref -p ${params.ploidy} $args -L bam_list.txt | bgzip -c > ${meta.id}.vcf.gz
     tabix -p vcf ${meta.id}.vcf.gz
