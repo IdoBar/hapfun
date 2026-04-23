@@ -468,7 +468,7 @@ if legend_order not in ('samplesheet', 'alphabetical'):
 
 pop_map, pop_first_seen = read_pop_map("${samplesheet}")
 
-vf = pysam.VariantFile('population.vcf.gz')
+vf = pysam.VariantFile(str(vcf))
 samples = list(vf.header.samples)
 
 if len(samples) == 0:
