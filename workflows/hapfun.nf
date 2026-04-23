@@ -247,12 +247,14 @@ workflow HAPFUN {
         
     } else if (params.caller == 'freebayes' && params.freebayes_mode == 'population') {
         def normaliseInputPath = { p ->
-            def uri = p.toUri()
-            if (uri?.scheme == 'scratch') {
-                def authorityPart = uri.authority ? "/${uri.authority}" : ''
-                return "/${uri.scheme}${authorityPart}${uri.path}"
+            def uriText = p.toUriString()
+            if (uriText?.startsWith('scratch://')) {
+                return "/scratch/${uriText - 'scratch://'}"
             }
-            return p.toString()
+            if (uriText?.startsWith('file://')) {
+                return uriText - 'file://'
+            }
+            return uriText ?: p.toString()
         }
 
         // Collect bams and bais together as a (bam_list, bai_list) pair.
@@ -262,8 +264,8 @@ workflow HAPFUN {
             .map { meta, bam, bai -> tuple(bam, bai) }
             .collect()
             .map { pairs ->
-                def bams = pairs.collect { normaliseInputPath(it[0]) }
-                def bais = pairs.collect { normaliseInputPath(it[1]) }
+                def bams = pairs.collect { file(normaliseInputPath(it[0]), checkIfExists: true) }
+                def bais = pairs.collect { file(normaliseInputPath(it[1]), checkIfExists: true) }
                 tuple(bams, bais)
             }
 
