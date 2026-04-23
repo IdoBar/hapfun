@@ -20,6 +20,7 @@ process POPGEN_ANALYSES {
     python - << 'PY'
 import csv
 import math
+import os
 import subprocess
 from itertools import combinations
 
@@ -468,7 +469,11 @@ if legend_order not in ('samplesheet', 'alphabetical'):
 
 pop_map, pop_first_seen = read_pop_map("${samplesheet}")
 
-vf = pysam.VariantFile(str(vcf))
+vcf_path = "${vcf}"
+if not os.path.exists(vcf_path):
+    raise RuntimeError(f"Input VCF was not staged: {vcf_path}")
+
+vf = pysam.VariantFile(vcf_path)
 samples = list(vf.header.samples)
 
 if len(samples) == 0:
@@ -511,7 +516,7 @@ else:
         root = upgma(samples, dist) if tree_method == 'upgma' else neighbor_joining(samples, dist)
         newick = to_newick(root)
     else:
-        write_alignment_files(str(vcf), samples)
+        write_alignment_files(vcf_path, samples)
         root = None
         newick = run_iqtree_ml() if tree_method == 'ml' else run_mrbayes()
 
