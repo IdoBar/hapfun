@@ -1,6 +1,6 @@
 process VCF_FILTER {
     tag "$meta.id"
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::bcftools=1.23.1"
     container 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'
     input: tuple val(meta), path(vcf)

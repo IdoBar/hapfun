@@ -1,6 +1,6 @@
 process FREEBAYES {
     tag "$meta.id"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
@@ -24,7 +24,7 @@ process FREEBAYES {
 
 process FREEBAYES_POPULATION {
     tag "$meta.id"
-    label 'process_medium'
+    label 'mc_large'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
@@ -46,7 +46,7 @@ process FREEBAYES_POPULATION {
 
 process GATK_HAPLOTYPECALLER {
     tag "$meta.id"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
 
@@ -95,7 +95,7 @@ process GATK_HAPLOTYPECALLER {
 }
 
 process GATK_COMBINEGVCFS {
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
 
@@ -122,7 +122,7 @@ process GATK_COMBINEGVCFS {
 }
 
 process GATK_GENOTYPEGVCFS {
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
 

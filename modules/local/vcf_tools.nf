@@ -1,5 +1,5 @@
 process BCFTOOLS_MERGE {
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::bcftools=1.23.1"
     container 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'
     input:
@@ -13,7 +13,7 @@ process BCFTOOLS_MERGE {
 }
 
 process BCFTOOLS_CONCAT {
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::bcftools=1.23.1"
     container 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'
     input:
@@ -31,7 +31,7 @@ process BCFTOOLS_CONCAT {
 
 process BCFTOOLS_STATS {
     tag "$meta.id"
-    label 'process_low'
+    label 'sc_medium'
     conda "bioconda::bcftools=1.23.1"
     container 'quay.io/biocontainers/bcftools:1.23.1--hb2cee57_0'
     input: tuple val(meta), path(vcf)

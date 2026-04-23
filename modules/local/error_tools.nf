@@ -2,7 +2,7 @@
 
 process MARK_DUPLICATES_LIB {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
 
@@ -25,9 +25,31 @@ process MARK_DUPLICATES_LIB {
     """
 }
 
+process MARK_DUPLICATES_LIB_BAMSORMADUP {
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
+    label 'mc_medium'
+    conda "bioconda::biobambam=2.0.185"
+    container 'quay.io/biocontainers/biobambam:2.0.185--h85de650_1'
+
+    input:
+    tuple val(meta), path(bam)
+
+    output:
+    tuple val(meta), path("*.dedup.bam"), path("*.dedup.bai"), emit: dedup_bam
+    path "*.metrics.txt", emit: metrics
+
+    script:
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
+    """
+    bamcollate2 inputformat=bam outputformat=bam level=1 < $bam | \
+    bamsormadup SO=coordinate inputformat=bam level=1 threads=${task.cpus} M=${unitId}.metrics.txt > ${unitId}.dedup.bam
+    bamindex < ${unitId}.dedup.bam > ${unitId}.dedup.bai
+    """
+}
+
 process GATK_CALL_LIB {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_medium'
+    label 'sc_medium'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
 
@@ -53,7 +75,7 @@ process GATK_CALL_LIB {
 
 process FREEBAYES_CALL_LIB {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
 
@@ -67,16 +89,20 @@ process FREEBAYES_CALL_LIB {
 
     script:
     def args = task.ext.args ?: ''
+    def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
+    def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
     def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
-    freebayes -f $ref -p ${params.ploidy} $args $bam | bgzip > ${unitId}.vcf.gz
-    tabix ${unitId}.vcf.gz
+    awk '{ print \$1 ":1-" \$2 }' $ref_idx > chromosome_regions.txt
+
+    freebayes-parallel chromosome_regions.txt ${threads} -f $ref -p ${params.ploidy} $args $bam | bgzip -c > ${unitId}.vcf.gz
+    tabix -p vcf ${unitId}.vcf.gz
     """
 }
 
 process VCF_MULTI_COMPARE {
     tag "$meta.id"
-    label 'process_low'
+    label 'sc_small'
     conda "conda-forge::python=3.9 conda-forge::pandas=1.4.2 bioconda::pysam=0.19.1"
     container 'quay.io/biocontainers/mulled-v2-629aec3ba267b06a1efc3ec454c0f09e134f6ee2:3b083bb5eae6e491b8579589b070fa29afbea2a1-0'
 
@@ -98,7 +124,7 @@ process VCF_MULTI_COMPARE {
 }
 
 process VCF_DISCORDANCE_MQC {
-    label 'process_low'
+    label 'sc_small'
     conda "conda-forge::python=3.9 conda-forge::pandas=1.4.2"
     container 'quay.io/biocontainers/mulled-v2-629aec3ba267b06a1efc3ec454c0f09e134f6ee2:3b083bb5eae6e491b8579589b070fa29afbea2a1-0'
 

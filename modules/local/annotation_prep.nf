@@ -2,7 +2,7 @@
 
 process GFF_TO_BED {
     tag "$gff"
-    label 'process_low'
+    label 'sc_small'
     conda "bioconda::bedops=2.4.42"
     container 'quay.io/biocontainers/bedops:2.4.42--hd6d6fdc_1'
 

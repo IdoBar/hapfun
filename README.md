@@ -24,7 +24,7 @@ By default, **HapFun** performs the following steps:
 3. **Read Alignment**: `bwa-mem2` (default) or `bowtie2`.
 4. **BAM Processing**:
     * Merges multiple libraries belonging to the same sample (`samtools`).
-    * Marks optical/PCR duplicates (`GATK MarkDuplicates`).
+    * Marks optical/PCR duplicates (`GATK MarkDuplicates` by default, with optional `bamsormadup`).
 5. **Alignment QC**: `Qualimap` (Supports optional `.gff`/`.bed` annotations for targeted region metrics).
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
@@ -94,6 +94,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--trimmer`: `fastp` (default) or `trimmomatic`
 * `--aligner`: `bwa-mem2` (default) or `bowtie2`
 * `--caller`: `freebayes` (default) or `gatk`
+* `--markdup_tool`: `gatk` (default) or `bamsormadup`
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--error_estimate`: `false` (default) or `true`
 * `--popgen`: Run population genetics module (PCA + phylogenetic tree) from final cohort VCF and add to MultiQC (Default: `false`).

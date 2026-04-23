@@ -1,7 +1,7 @@
 // Save as: modules/local/multiqc.nf
 
 process MULTIQC {
-    label 'process_low'
+    label 'sc_small'
     conda "bioconda::multiqc=1.33"
     container 'quay.io/biocontainers/multiqc:1.33--pyhdfd78af_0'
 

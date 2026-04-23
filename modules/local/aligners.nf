@@ -2,7 +2,7 @@
 
 process BWA_ALIGN {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_high'
+    label 'mc_large'
     conda "bioconda::bwa-mem2=2.3"
     container 'quay.io/biocontainers/bwa-mem2:2.3--he70b90d_0'
     
@@ -24,7 +24,7 @@ process BWA_ALIGN {
 
 process BOWTIE2_ALIGN {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_high'
+    label 'mc_large'
     conda "bioconda::bowtie2=2.5.5"
     container 'quay.io/biocontainers/bowtie2:2.5.5--ha27dd3b_0'
 
@@ -46,7 +46,7 @@ process BOWTIE2_ALIGN {
 
 process SAMTOOLS_SORT_ALIGN {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::samtools=1.23.1"
     container 'quay.io/biocontainers/samtools:1.23.1--ha83d96e_0'
 

@@ -1,5 +1,5 @@
 process FREEBAYES_SPLIT_REGIONS {
-    label 'process_low'
+    label 'sc_small'
     input:
         path ref_idx
     output:

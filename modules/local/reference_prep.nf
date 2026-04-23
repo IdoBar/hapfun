@@ -2,7 +2,7 @@
 
 process DECOMPRESS_FASTA {
     tag "$fasta"
-    label 'process_low'
+    label 'sc_small'
     conda "bioconda::samtools=1.23.1"
     container 'quay.io/biocontainers/samtools:1.23.1--ha83d96e_0'
 
@@ -20,7 +20,7 @@ process DECOMPRESS_FASTA {
 
 process SAMTOOLS_FAIDX {
     tag "$fasta"
-    label 'process_low'
+    label 'sc_small'
     conda "bioconda::samtools=1.23.1"
     container 'quay.io/biocontainers/samtools:1.23.1--ha83d96e_0'
 
@@ -38,7 +38,7 @@ process SAMTOOLS_FAIDX {
 
 process GATK_DICTIONARY {
     tag "$fasta"
-    label 'process_low'
+    label 'sc_small'
     conda "bioconda::gatk4=4.6.2.0"
     container 'broadinstitute/gatk:4.6.2.0'
 
@@ -59,7 +59,7 @@ process GATK_DICTIONARY {
 
 process BWA_INDEX {
     tag "$fasta"
-    label 'process_high'
+    label 'sc_medium'
     conda "bioconda::bwa-mem2=2.3"
     container 'quay.io/biocontainers/bwa-mem2:2.3--he70b90d_0'
 
@@ -77,7 +77,7 @@ process BWA_INDEX {
 
 process BOWTIE2_INDEX {
     tag "$fasta"
-    label 'process_high'
+    label 'mc_medium'
     conda "bioconda::bowtie2=2.5.5"
     container 'quay.io/biocontainers/bowtie2:2.5.5--ha27dd3b_0'
 

@@ -3,12 +3,12 @@ include { BWA_ALIGN; BOWTIE2_ALIGN; SAMTOOLS_SORT_ALIGN } from '../modules/local
 include { DECOMPRESS_FASTA; SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
 include { GFF_TO_BED } from '../modules/local/annotation_prep'
 include { FREEBAYES_SPLIT_REGIONS } from '../modules/local/genome_regions'
-include { SAMTOOLS_MERGE; MARK_DUPLICATES; QUALIMAP } from '../modules/local/bam_tools'
+include { SAMTOOLS_MERGE; MARK_DUPLICATES; MARK_DUPLICATES_BAMSORMADUP; QUALIMAP } from '../modules/local/bam_tools'
 include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
 include { BCFTOOLS_MERGE; BCFTOOLS_CONCAT } from '../modules/local/vcf_tools'
 include { MULTIQC } from '../modules/local/multiqc'
 include { POPGEN_ANALYSES } from '../modules/local/popgen'
-include { MARK_DUPLICATES_LIB; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
+include { MARK_DUPLICATES_LIB; MARK_DUPLICATES_LIB_BAMSORMADUP; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
 include { VCF_FILTER as VCF_FILTER_LIB; VCF_FILTER as VCF_FILTER_FINAL } from '../modules/local/vcf_filter'
 include { BCFTOOLS_STATS as BCFTOOLS_STATS_RAW; BCFTOOLS_STATS as BCFTOOLS_STATS_FILTERED } from '../modules/local/vcf_tools'
 
@@ -18,12 +18,16 @@ workflow HAPFUN {
     def step_order = [qc: 1, alignment: 2, call: 3, filter: 4, multiqc: 5]
     def valid_start_steps = ['qc', 'alignment']
     def valid_stop_steps = ['qc', 'alignment', 'call', 'filter', 'multiqc']
+    def valid_markdup_tools = ['gatk', 'bamsormadup']
 
     if (!valid_start_steps.contains(params.start_step)) {
         error "Invalid --start_step '${params.start_step}'. Supported values: ${valid_start_steps.join(', ')}"
     }
     if (!valid_stop_steps.contains(params.stop_at)) {
         error "Invalid --stop_at '${params.stop_at}'. Supported values: ${valid_stop_steps.join(', ')}"
+    }
+    if (!valid_markdup_tools.contains(params.markdup_tool)) {
+        error "Invalid --markdup_tool '${params.markdup_tool}'. Supported values: ${valid_markdup_tools.join(', ')}"
     }
     if (step_order[params.start_step] > step_order[params.stop_at]) {
         error "Invalid step window: --start_step '${params.start_step}' occurs after --stop_at '${params.stop_at}'"
@@ -161,13 +165,21 @@ workflow HAPFUN {
                 return result
             }
         
-        MARK_DUPLICATES_LIB(ch_multi_libs)
+        def ch_error_dedup_bam
+
+        if (params.markdup_tool == 'bamsormadup') {
+            MARK_DUPLICATES_LIB_BAMSORMADUP(ch_multi_libs)
+            ch_error_dedup_bam = MARK_DUPLICATES_LIB_BAMSORMADUP.out.dedup_bam
+        } else {
+            MARK_DUPLICATES_LIB(ch_multi_libs)
+            ch_error_dedup_bam = MARK_DUPLICATES_LIB.out.dedup_bam
+        }
 
         if (params.caller == 'gatk') {
-            GATK_CALL_LIB(MARK_DUPLICATES_LIB.out.dedup_bam, ch_ref, ch_ref_fai, ch_ref_dict)
+            GATK_CALL_LIB(ch_error_dedup_bam, ch_ref, ch_ref_fai, ch_ref_dict)
             ch_lib_vcfs = GATK_CALL_LIB.out.vcf
         } else {
-            FREEBAYES_CALL_LIB(MARK_DUPLICATES_LIB.out.dedup_bam, ch_ref, ch_ref_fai)
+            FREEBAYES_CALL_LIB(ch_error_dedup_bam, ch_ref, ch_ref_fai)
             ch_lib_vcfs = FREEBAYES_CALL_LIB.out.vcf
         }
 
@@ -216,10 +228,21 @@ workflow HAPFUN {
     }.groupTuple()
     
     SAMTOOLS_MERGE(ch_for_merge)
-    MARK_DUPLICATES(SAMTOOLS_MERGE.out.merged_bam)
-    ch_multiqc_reports = ch_multiqc_reports.mix(MARK_DUPLICATES.out.metrics)
+    def ch_dedup_bam_for_call
+    def ch_dedup_metrics
+
+    if (params.markdup_tool == 'bamsormadup') {
+        MARK_DUPLICATES_BAMSORMADUP(SAMTOOLS_MERGE.out.merged_bam)
+        ch_dedup_bam_for_call = MARK_DUPLICATES_BAMSORMADUP.out.dedup_bam
+        ch_dedup_metrics = MARK_DUPLICATES_BAMSORMADUP.out.metrics
+    } else {
+        MARK_DUPLICATES(SAMTOOLS_MERGE.out.merged_bam)
+        ch_dedup_bam_for_call = MARK_DUPLICATES.out.dedup_bam
+        ch_dedup_metrics = MARK_DUPLICATES.out.metrics
+    }
+    ch_multiqc_reports = ch_multiqc_reports.mix(ch_dedup_metrics)
     
-    QUALIMAP(MARK_DUPLICATES.out.dedup_bam, ch_annot_bed)
+    QUALIMAP(ch_dedup_bam_for_call, ch_annot_bed)
     // Note: Use .results if your module emits tuple(meta, dir), or .report if it emits path(dir)
     ch_multiqc_reports = ch_multiqc_reports.mix(QUALIMAP.out.results.map { meta, dir -> dir })
 
@@ -230,7 +253,7 @@ workflow HAPFUN {
 
     if (params.caller == 'gatk') {
         // 1. Call individual gVCFs
-        GATK_HAPLOTYPECALLER(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai, ch_ref_dict)
+        GATK_HAPLOTYPECALLER(ch_dedup_bam_for_call, ch_ref, ch_ref_fai, ch_ref_dict)
         
         // 2. Collect all gVCFs and indices into flat lists
         ch_gvcfs = GATK_HAPLOTYPECALLER.out.gvcf.map { meta, gvcf, tbi -> gvcf }.collect()
@@ -249,12 +272,12 @@ workflow HAPFUN {
         // Collect cohort BAM/BAI files into separate channels.
         // Wrap each collected list in a one-element list so combine keeps
         // each payload as one field instead of flattening list elements.
-        ch_population_bams = MARK_DUPLICATES.out.dedup_bam
+        ch_population_bams = ch_dedup_bam_for_call
             .map { meta, bam, bai -> bam }
             .collect()
             .map { bams -> [bams] }
 
-        ch_population_bais = MARK_DUPLICATES.out.dedup_bam
+        ch_population_bais = ch_dedup_bam_for_call
             .map { meta, bam, bai -> bai }
             .collect()
             .map { bais -> [bais] }
@@ -295,7 +318,7 @@ workflow HAPFUN {
         
     } else {
         // Fallback: Individual Freebayes calling & standard merging
-        FREEBAYES(MARK_DUPLICATES.out.dedup_bam, ch_ref, ch_ref_fai)
+        FREEBAYES(ch_dedup_bam_for_call, ch_ref, ch_ref_fai)
         BCFTOOLS_MERGE(FREEBAYES.out.vcf.collect(), FREEBAYES.out.tbi.collect())
         ch_final_vcf = BCFTOOLS_MERGE.out.vcf.map { vcf -> tuple([id: "merged"], vcf) }
     }

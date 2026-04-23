@@ -2,7 +2,7 @@
 
 process FASTP {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::fastp=1.3.0"
     container 'quay.io/biocontainers/fastp:1.3.0--h43da1c4_0'
     
@@ -22,7 +22,7 @@ process FASTP {
 
 process FASTQC {
     tag "$meta.id"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::fastqc=0.12.1"
     container 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'
     
@@ -38,7 +38,7 @@ process FASTQC {
 
 process TRIMMOMATIC {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
-    label 'process_medium'
+    label 'mc_medium'
     conda "bioconda::trimmomatic=0.40"
     container 'quay.io/biocontainers/trimmomatic:0.40--hdfd78af_0'
     
