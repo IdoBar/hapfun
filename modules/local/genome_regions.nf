@@ -7,8 +7,6 @@ process FREEBAYES_SPLIT_REGIONS {
     shell:
     '''
     mkdir -p regions
-    awk '{ printf "%s %s\\n", $1, $2 }' !{ref_idx} | while read -r chrom length; do
-        printf '%s\\n' "${chrom}:1-${length}" > "regions/${chrom}.regions.txt"
-    done
+    awk '{printf "%s:1-%s\\n", $1, $2 > ("regions/" $1 ".regions.txt")}' !{ref_idx}
     '''
 }

@@ -516,7 +516,7 @@ else:
         newick = run_iqtree_ml() if tree_method == 'ml' else run_mrbayes()
 
 with open('popgen_tree.newick', 'w') as fh:
-    fh.write(newick + '\n')
+    fh.write(newick + '\\n')
 
 pops = [pop_map.get(s, 'NA') for s in samples]
 legend_pops = ordered_pops(samples, pop_map, pop_first_seen, legend_order)
@@ -531,23 +531,23 @@ else:
     )
 
 pca_html = (
-    "# id: 'popgen_pca'\n"
-    "# section_name: 'Population Genetics: PCA (PC1-PC3)'\n"
-    "# description: 'Principal component analysis from population VCF genotype dosages. Point color uses samplesheet pop column.'\n"
-    "# plot_type: 'html'\n"
-    + pca_svg + "\n"
+    "# id: 'popgen_pca'\\n"
+    "# section_name: 'Population Genetics: PCA (PC1-PC3)'\\n"
+    "# description: 'Principal component analysis from population VCF genotype dosages. Point color uses samplesheet pop column.'\\n"
+    "# plot_type: 'html'\\n"
+    + pca_svg + "\\n"
 )
 
 with open('popgen_pca_mqc.txt', 'w') as fh:
     fh.write(pca_html)
 
 tree_html = (
-    "# id: 'popgen_tree'\n"
-    "# section_name: 'Population Genetics: Phylogenetic Tree'\n"
-    "# description: 'Tree built from Euclidean distances over PCA components (PC1-PC3) using selected method. Leaf colors use samplesheet pop column.'\n"
-    "# plot_type: 'html'\n"
-    "<p><b>Newick:</b> <code>" + newick.replace('<', '&lt;').replace('>', '&gt;') + "</code></p>\n"
-    + tree_svg + "\n"
+    "# id: 'popgen_tree'\\n"
+    "# section_name: 'Population Genetics: Phylogenetic Tree'\\n"
+    "# description: 'Tree built from Euclidean distances over PCA components (PC1-PC3) using selected method. Leaf colors use samplesheet pop column.'\\n"
+    "# plot_type: 'html'\\n"
+    "<p><b>Newick:</b> <code>" + newick.replace('<', '&lt;').replace('>', '&gt;') + "</code></p>\\n"
+    + tree_svg + "\\n"
 )
 
 with open('popgen_tree_mqc.txt', 'w') as fh:
