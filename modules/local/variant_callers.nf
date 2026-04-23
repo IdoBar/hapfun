@@ -28,16 +28,15 @@ process FREEBAYES_POPULATION {
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
-        tuple val(meta), path(region_file), path(bams), path(bais), path(ref), path(ref_idx)
+        tuple val(meta), path(region_file), path(bams, stageAs: 'bams??/*'), path(bais, stageAs: 'bais??/*'), path(ref), path(ref_idx)
     output:
         tuple val(meta), path("${meta.id}.vcf.gz"), path("${meta.id}.vcf.gz.tbi"), emit: vcf
     script:
     def args = task.ext.args ?: ''
     def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
     def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
-    def bamListText = bams.collect { it.toString() }.join('\n')
     """
-    printf '%s\n' "$bamListText" > bam_list.txt
+    find bams?? -type f -name '*.bam' | sort > bam_list.txt
 
     freebayes-parallel $region_file ${threads} -f $ref -p ${params.ploidy} $args -L bam_list.txt | bgzip -c > ${meta.id}.vcf.gz
     tabix -p vcf ${meta.id}.vcf.gz
