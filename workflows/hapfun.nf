@@ -82,6 +82,7 @@ workflow HAPFUN {
     // Stage MultiQC config and logo together so the relative logo path in the YAML resolves
     ch_multiqc_config = file(params.multiqc_config)
     ch_multiqc_logo   = file("$projectDir/assets/hapfun.png")
+    ch_multiqc_versions = Channel.value(file("$projectDir/assets/software_versions_mqc.yml"))
     ch_vcf_compare_script = Channel.value(file("$projectDir/bin/vcf_multi_compare.py"))
     ch_popgen_script = Channel.value(file("$projectDir/bin/popgen_analyses.py"))
 
@@ -361,6 +362,8 @@ workflow HAPFUN {
     }
     if (params.stop_at == 'popgen') { return }
     // --- FINAL STEP: MULTIQC ---
+
+    ch_multiqc_reports = ch_multiqc_reports.mix(ch_multiqc_versions)
     
     // Pass config and logo so both are staged in the work directory
     MULTIQC(ch_multiqc_reports.collect(), ch_multiqc_config, ch_multiqc_logo)
