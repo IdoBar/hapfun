@@ -29,6 +29,9 @@ workflow HAPFUN {
     if (!valid_markdup_tools.contains(params.markdup_tool)) {
         error "Invalid --markdup_tool '${params.markdup_tool}'. Supported values: ${valid_markdup_tools.join(', ')}"
     }
+    if ((params.freebayes_chunk_size as Integer) < 1) {
+        error "Invalid --freebayes_chunk_size '${params.freebayes_chunk_size}'. Value must be >= 1"
+    }
     if (step_order[params.start_step] > step_order[params.stop_at]) {
         error "Invalid step window: --start_step '${params.start_step}' occurs after --stop_at '${params.stop_at}'"
     }
@@ -283,7 +286,10 @@ workflow HAPFUN {
             .collect()
             .map { bais -> [bais] }
 
-        FREEBAYES_SPLIT_REGIONS(ch_ref_fai)
+        FREEBAYES_SPLIT_REGIONS(
+            ch_ref_fai,
+            Channel.value(params.freebayes_chunk_size)
+        )
 
         ch_population_regions = FREEBAYES_SPLIT_REGIONS.out.regions
             .flatten()

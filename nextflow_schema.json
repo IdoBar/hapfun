@@ -31,6 +31,12 @@
           "description": "Duplicate marking tool. 'gatk' uses GATK MarkDuplicates; 'bamsormadup' uses biobambam bamsormadup."
         },
         "freebayes_mode": { "type": "string", "enum": ["individual", "population"], "default": "population" },
+        "freebayes_chunk_size": {
+          "type": "integer",
+          "default": 500000,
+          "minimum": 1,
+          "description": "Chunk size passed to fasta_generate_regions.py for Freebayes population-mode sharding."
+        },
         "freebayes_args": {
           "type": "string",
           "default": "--genotype-qualities",

@@ -28,7 +28,8 @@ By default, **HapFun** performs the following steps:
 5. **Alignment QC**: `Qualimap` (Supports optional `.gff`/`.bed` annotations for targeted region metrics).
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
-    * *Population mode splits the reference `.fai` into chromosome shards, launches one `freebayes-parallel` task per chromosome using a staged `bam_list.txt`, and concatenates the shard VCFs with `bcftools concat`.*
+    * *Population mode can split chromosomes into multiple sub-regions for finer `freebayes-parallel` fan-out using fixed-size chunks from `fasta_generate_regions.py`.*
+    * *After global region generation, per-chromosome region files are produced so each population shard remains chromosome-scoped for concatenation.*
 7. **Error Estimation (Optional)**: If `--error_estimate true` is flagged, the pipeline automatically separates replicate libraries, calls variants on them independently, and calculates genotype discordance rates using a custom Python module. The raw per-library VCFs used in this comparison are also retained in `results/variants/error_estimate_libraries/`.
 8. **Population Genetics (Optional)**: If `--popgen true`, HapFun performs PCA (PC1-PC3) and constructs a phylogenetic tree from the final cohort VCF (regardless of variant caller and calling mode), then adds both panels to MultiQC. If a `pop` column is present in the samplesheet, it is used to color PCA markers and tree nodes.
 9. **Variant Filtering**: Strictly filters VCFs based on Depth (DP), Quality (QUAL), and polymorphism, while recalculating INFO tags (`bcftools +fill-tags`). Outputs distinct `.snps.vcf` and `.indels.vcf` files.
@@ -96,6 +97,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--caller`: `freebayes` (default) or `gatk`
 * `--markdup_tool`: `gatk` (default) or `bamsormadup`
 * `--freebayes_mode`: `population` (default) or `individual`
+* `--freebayes_chunk_size`: Chunk size passed to `fasta_generate_regions.py` for splitting genomic regions in Freebayes population-mode. (Default: `500000`).
 * `--error_estimate`: `false` (default) or `true`
 * `--popgen`: Run population genetics module (PCA + phylogenetic tree) from final cohort VCF and add to MultiQC (Default: `false`).
 * `--popgen_tree_method`: Tree construction method for population genetics (`upgma`, `nj`, `ml`, or `bayesian`, Default: `upgma`).
@@ -103,7 +105,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 
 **Tool Arguments & Parameters:**
 
-* `--ploidy`: Expected sample ploidy used by variant callers (Default: `2`). Set to `1` for true haploid genomes, or higher values for polyploid organisms.
+* `--ploidy`: Expected sample ploidy used by variant callers (Default: `2`, required for masking heterozygote genotypes, see `--mask_hetero` flag below). Set to `1` for true haploid genomes, or higher values for polyploid organisms.
 * `--fastp_args`: Additional arguments passed to Fastp (Default: empty).
 * `--trimmomatic_args`: Additional arguments passed to Trimmomatic (Default: `ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`).
 * `--bwa_args`: Additional arguments passed to BWA-mem2 (Default: empty).
