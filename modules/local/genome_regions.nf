@@ -14,12 +14,12 @@ process FREEBAYES_SPLIT_REGIONS {
 
     fasta_generate_regions.py ${ref_idx} ${chunk} > target_regions.txt
 
-    cut -f1 ${ref_idx} | xargs -I{} sh -c '
-        chrom="\$1"
-        awk -v chr="\$chrom" -F "[:[:space:]]+" "\$1 == chr { print \$0 }" target_regions.txt > "regions/\${chrom}.regions.txt"
+    cut -f1 ${ref_idx} > chrom_list.txt
+    while IFS= read -r chrom; do
+        awk -v chr="\$chrom" -F '[:[:space:]]+' '\$1 == chr { print \$0 }' target_regions.txt > "regions/\${chrom}.regions.txt"
         if [ ! -s "regions/\${chrom}.regions.txt" ]; then
-            awk -v chr="\$chrom" "\$1 == chr { printf \"%s:1-%s\\n\", \$1, \$2 }" ${ref_idx} > "regions/\${chrom}.regions.txt"
+            awk -v chr="\$chrom" '\$1 == chr { printf "%s:1-%s\\n", \$1, \$2 }' ${ref_idx} > "regions/\${chrom}.regions.txt"
         fi
-    ' _ {}
+    done < chrom_list.txt
     """
 }

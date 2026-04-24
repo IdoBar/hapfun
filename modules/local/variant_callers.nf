@@ -61,36 +61,24 @@ process GATK_HAPLOTYPECALLER {
 
     script:
     def args = task.ext.args ?: ''
-    def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
-    def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
+    def mem_per_job = Math.max(1, task.memory.toGiga().intdiv(task.cpus))
     """
-    awk '{ print \$1 }' ${ref_idx} > chromosomes.txt
+    export NF_REF="${ref}"
+    export NF_BAM="${bam}"
+    export NF_PLOIDY="${params.ploidy}"
+    export NF_ARGS="${args}"
+    export NF_MEM="${mem_per_job}"
 
-    max_jobs=${threads}
-    while IFS= read -r chrom; do
-        (
-            gatk --java-options "-Xmx${task.memory.toGiga()}g" HaplotypeCaller \
-                -R ${ref} \
-                -I ${bam} \
-                -L "\$chrom" \
-                -O "\${chrom}.g.vcf.gz" \
-                -ERC GVCF \
-                -ploidy ${params.ploidy} \
-                --native-pair-hmm-threads 1 \
-                ${args}
-            tabix -p vcf "\${chrom}.g.vcf.gz"
-        ) &
+    cut -f1 ${ref_idx} | xargs -P ${task.cpus} -I {} sh -c '
+        gatk --java-options "-Xmx\${NF_MEM}g" HaplotypeCaller \
+            -R "\${NF_REF}" -I "\${NF_BAM}" -L "{}" -O "{}.g.vcf.gz" \
+            -ERC GVCF -ploidy "\${NF_PLOIDY}" --native-pair-hmm-threads 1 \${NF_ARGS} &&
+        tabix -f -p vcf "{}.g.vcf.gz"
+    '
 
-        while [ "\$(jobs -pr | wc -l)" -ge "\$max_jobs" ]; do
-            wait -n
-        done
-    done < chromosomes.txt
-
-    wait
-
-    gather_args=\$(awk '{ printf " -I %s.g.vcf.gz", \$1 }' chromosomes.txt)
+    gather_args=\$(awk '{ printf " -I %s.g.vcf.gz", \$1 }' ${ref_idx})
     gatk --java-options "-Xmx${task.memory.toGiga()}g" GatherVcfs \$gather_args -O ${meta.id}.g.vcf.gz
-    tabix -p vcf ${meta.id}.g.vcf.gz
+    tabix -f -p vcf ${meta.id}.g.vcf.gz
     """
 }
 
