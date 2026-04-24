@@ -57,7 +57,7 @@ process GATK_HAPLOTYPECALLER {
     path ref_dict 
 
     output:
-    tuple val(meta), path("*.g.vcf.gz"), path("*.g.vcf.gz.tbi"), emit: gvcf
+    tuple val(meta), path("${meta.id}.g.vcf.gz"), path("${meta.id}.g.vcf.gz.tbi"), emit: gvcf
 
     script:
     def args = task.ext.args ?: ''
