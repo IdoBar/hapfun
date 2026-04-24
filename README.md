@@ -20,7 +20,7 @@ Built using Nextflow DSL2 and strictly adhering to nf-core data structures (incl
 By default, **HapFun** performs the following steps:
 
 1. **Reference Preparation**: Automatically decompresses the reference (if provided as `.fasta.gz`) and generates missing `.fai`, `.dict`, and aligner index directories (`bwa-mem2` or `bowtie2`) if not provided by the user.
-2. **Read QC & Trimming**: `fastp` (default) OR `FastQC` + `Trimmomatic`.
+2. **Read QC & Trimming**: `fastp` (default) OR `Trimmomatic` (with `FastQC`).
 3. **Read Alignment**: `bwa-mem2` (default) or `bowtie2`.
 4. **BAM Processing**:
     * Merges multiple libraries belonging to the same sample (`samtools`).
