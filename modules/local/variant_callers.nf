@@ -81,15 +81,15 @@ process GATK_HAPLOTYPECALLER {
             tabix -p vcf "\${chrom}.g.vcf.gz"
         ) &
 
-        while [ "$(jobs -pr | wc -l)" -ge "$max_jobs" ]; do
+        while [ "\$(jobs -pr | wc -l)" -ge "\$max_jobs" ]; do
             wait -n
         done
     done < chromosomes.txt
 
     wait
 
-    gather_args=$(awk '{ printf " -I %s.g.vcf.gz", \$1 }' chromosomes.txt)
-    gatk --java-options "-Xmx${task.memory.toGiga()}g" GatherVcfs $gather_args -O ${meta.id}.g.vcf.gz
+    gather_args=\$(awk '{ printf " -I %s.g.vcf.gz", \$1 }' chromosomes.txt)
+    gatk --java-options "-Xmx${task.memory.toGiga()}g" GatherVcfs \$gather_args -O ${meta.id}.g.vcf.gz
     tabix -p vcf ${meta.id}.g.vcf.gz
     """
 }
