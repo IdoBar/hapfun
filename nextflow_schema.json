@@ -27,7 +27,7 @@
         "markdup_tool": {
           "type": "string",
           "enum": ["gatk", "bamsormadup"],
-          "default": "gatk",
+          "default": "bamsormadup",
           "description": "Duplicate marking tool. 'gatk' uses GATK MarkDuplicates; 'bamsormadup' uses biobambam bamsormadup."
         },
         "freebayes_mode": { "type": "string", "enum": ["individual", "population"], "default": "population" },

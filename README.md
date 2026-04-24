@@ -24,7 +24,7 @@ By default, **HapFun** performs the following steps:
 3. **Read Alignment**: `bwa-mem2` (default) or `bowtie2`.
 4. **BAM Processing**:
     * Merges multiple libraries belonging to the same sample (`samtools`).
-    * Marks optical/PCR duplicates (`GATK MarkDuplicates` by default, with optional `bamsormadup`).
+    * Marks optical/PCR duplicates (`bamsormadup` by default, with optional `GATK MarkDuplicates`).
 5. **Alignment QC**: `Qualimap` (Supports optional `.gff`/`.bed` annotations for targeted region metrics).
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
@@ -95,7 +95,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--trimmer`: `fastp` (default) or `trimmomatic`
 * `--aligner`: `bwa-mem2` (default) or `bowtie2`
 * `--caller`: `freebayes` (default) or `gatk`
-* `--markdup_tool`: `gatk` (default) or `bamsormadup`
+* `--markdup_tool`: `bamsormadup` (default) or `gatk`
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--freebayes_chunk_size`: Chunk size passed to `fasta_generate_regions.py` for splitting genomic regions in Freebayes population-mode. (Default: `500000`).
 * `--error_estimate`: `false` (default) or `true`
