@@ -353,6 +353,7 @@ workflow HAPFUN {
     VCF_FILTER_FINAL(ch_final_vcf)
 
     ch_filter_out = VCF_FILTER_FINAL.out.filtered_vcf
+    ch_filter_out_tbi = VCF_FILTER_FINAL.out.filtered_vcf_tbi
 
     ch_filtered_vcf = ch_filter_out.map { meta, vcf -> tuple([id: "${meta.id}_filtered"], vcf) }
 
@@ -362,7 +363,9 @@ workflow HAPFUN {
     if (params.stop_at == 'filter') { return }
     // --- STEP 5: POPULATION GENETICS ---
     if (params.popgen) {
-        ch_filtered_vcf_for_popgen = ch_filter_out.map { meta, vcf -> vcf }
+        ch_filtered_vcf_for_popgen = ch_filter_out
+            .join(ch_filter_out_tbi, by: 0)
+            .map { meta, vcf, tbi -> tuple(vcf, tbi) }
         POPGEN_ANALYSES(
             ch_filtered_vcf_for_popgen,
             ch_samplesheet,

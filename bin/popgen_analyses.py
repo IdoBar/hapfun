@@ -4,6 +4,7 @@ import argparse
 import csv
 import math
 import os
+import shutil
 import subprocess
 from itertools import combinations
 
@@ -286,7 +287,10 @@ def write_alignment_files(vcf_path, sample_names):
 
 
 def run_iqtree_ml():
-    run_cmd(['iqtree2', '-s', 'popgen_alignment.fasta', '-m', 'GTR+ASC+G', '-nt', 'AUTO', '-redo', '-quiet'])
+    iqtree_bin = shutil.which('iqtree2') or shutil.which('iqtree')
+    if not iqtree_bin:
+        raise RuntimeError('Neither iqtree2 nor iqtree was found in PATH. Install IQ-TREE for --tree-method ml.')
+    run_cmd([iqtree_bin, '-s', 'popgen_alignment.fasta', '-m', 'GTR+ASC+G', '-nt', 'AUTO', '-redo', '-quiet'])
     with open('popgen_alignment.fasta.treefile') as fh:
         return fh.read().strip()
 
@@ -562,6 +566,7 @@ import argparse
 import csv
 import math
 import os
+import shutil
 import subprocess
 from itertools import combinations
 
@@ -835,7 +840,10 @@ def write_alignment_files(vcf_path, sample_names):
 
 
 def run_iqtree_ml():
-    run_cmd(['iqtree2', '-s', 'popgen_alignment.fasta', '-m', 'GTR+ASC+G', '-nt', 'AUTO', '-redo', '-quiet'])
+    iqtree_bin = shutil.which('iqtree2') or shutil.which('iqtree')
+    if not iqtree_bin:
+        raise RuntimeError('Neither iqtree2 nor iqtree was found in PATH. Install IQ-TREE for --tree-method ml.')
+    run_cmd([iqtree_bin, '-s', 'popgen_alignment.fasta', '-m', 'GTR+ASC+G', '-nt', 'AUTO', '-redo', '-quiet'])
     with open('popgen_alignment.fasta.treefile') as fh:
         return fh.read().strip()
 

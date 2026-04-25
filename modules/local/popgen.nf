@@ -1,10 +1,10 @@
 process POPGEN_ANALYSES {
     label 'sc_medium'
     conda "conda-forge::python=3.9 conda-forge::numpy=1.23.5 conda-forge::pandas=1.4.2 bioconda::pysam=0.19.1 bioconda::iqtree=2.4.0 bioconda::mrbayes=3.2.7"
-    container 'quay.io/biocontainers/mulled-v2-629aec3ba267b06a1efc3ec454c0f09e134f6ee2:3b083bb5eae6e491b8579589b070fa29afbea2a1-0'
+    container 'ghcr.io/idobar/popgen:latest'
 
     input:
-    path vcf
+    tuple path(vcf), path(vcf_tbi)
     path samplesheet
     val tree_method
     val legend_order
