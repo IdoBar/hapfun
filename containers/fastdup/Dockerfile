@@ -71,6 +71,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libbz2-1.0 \
         liblzma5 \
         libncurses6 \
+        samtools \
         zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
@@ -78,6 +79,7 @@ COPY --from=builder /build/fastdup/build/bin/fastdup /usr/local/bin/fastdup
 
 # Sanity check
 RUN fastdup --version
+RUN samtools --version
 
 LABEL org.opencontainers.image.source="https://github.com/zzhofict/FastDup" \
       org.opencontainers.image.version="1.0.0" \

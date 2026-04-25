@@ -85,7 +85,7 @@ process MARK_DUPLICATES_LIB_FASTDUP {
     def unitId = meta.unit_id ?: meta.library ?: meta.id
     """
     fastdup --input $bam --output ${unitId}.dedup.bam --metrics ${unitId}.metrics.txt --num-threads ${task.cpus}
-    samtools index -@ ${task.cpus} -o ${unitId}.dedup.bai ${unitId}.dedup.bam
+    samtools index -@ ${task.cpus} ${unitId}.dedup.bam ${unitId}.dedup.bai
     """
 }
 

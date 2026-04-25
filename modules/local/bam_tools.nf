@@ -71,7 +71,7 @@ process MARK_DUPLICATES_FASTDUP {
     script:
     """
     fastdup --input $bam --output ${meta.id}.dedup.bam --metrics ${meta.id}.metrics.txt --num-threads ${task.cpus}
-    samtools index -@ ${task.cpus} -o ${meta.id}.dedup.bai ${meta.id}.dedup.bam
+    samtools index -@ ${task.cpus} ${meta.id}.dedup.bam ${meta.id}.dedup.bai
     """
 }
 
