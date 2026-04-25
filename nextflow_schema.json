@@ -26,9 +26,9 @@
         "caller": { "type": "string", "enum": ["gatk", "freebayes"], "default": "freebayes" },
         "markdup_tool": {
           "type": "string",
-          "enum": ["gatk", "bamsormadup"],
+          "enum": ["gatk", "bamsormadup", "sambamba", "fastdup"],
           "default": "bamsormadup",
-          "description": "Duplicate marking tool. 'gatk' uses GATK MarkDuplicates; 'bamsormadup' uses biobambam bamsormadup."
+          "description": "Duplicate marking tool. 'gatk' uses GATK MarkDuplicates; 'bamsormadup' uses biobambam bamsormadup; 'sambamba' uses sambamba markdup; 'fastdup' uses FastDup (Picard-compatible, faster)."
         },
         "freebayes_mode": { "type": "string", "enum": ["individual", "population"], "default": "population" },
         "freebayes_chunk_size": {

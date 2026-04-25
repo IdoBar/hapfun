@@ -43,6 +43,38 @@ process MARK_DUPLICATES_BAMSORMADUP {
     """
 }
 
+process MARK_DUPLICATES_SAMBAMBA {
+    tag "$meta.id"
+    label 'mc_medium'
+    conda "bioconda::sambamba=1.0.1"
+    container 'quay.io/biocontainers/sambamba:1.0.1--h6f6fda4_1'
+    input: tuple val(meta), path(bam)
+    output:
+        tuple val(meta), path("${meta.id}.dedup.bam"), path("${meta.id}.dedup.bai"), emit: dedup_bam
+        path "${meta.id}.sambamba_markdup.log", emit: metrics
+    script:
+    """
+    sambamba markdup -t ${task.cpus} $bam ${meta.id}.dedup.bam 2> ${meta.id}.sambamba_markdup.log
+    sambamba index -t ${task.cpus} ${meta.id}.dedup.bam ${meta.id}.dedup.bai
+    """
+}
+
+process MARK_DUPLICATES_FASTDUP {
+    tag "$meta.id"
+    label 'mc_medium'
+    conda "bioconda::fastdup=1.0.0 bioconda::samtools=1.23.1"
+    container 'ghcr.io/idobar/fastdup:latest'
+    input: tuple val(meta), path(bam)
+    output:
+        tuple val(meta), path("${meta.id}.dedup.bam"), path("${meta.id}.dedup.bai"), emit: dedup_bam
+        path "${meta.id}.metrics.txt", emit: metrics
+    script:
+    """
+    fastdup --input $bam --output ${meta.id}.dedup.bam --metrics ${meta.id}.metrics.txt --num-threads ${task.cpus}
+    samtools index -@ ${task.cpus} -o ${meta.id}.dedup.bai ${meta.id}.dedup.bam
+    """
+}
+
 process QUALIMAP {
     tag "$meta.id"
     label 'mc_medium'

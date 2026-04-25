@@ -47,6 +47,48 @@ process MARK_DUPLICATES_LIB_BAMSORMADUP {
     """
 }
 
+process MARK_DUPLICATES_LIB_SAMBAMBA {
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
+    label 'mc_medium'
+    conda "bioconda::sambamba=1.0.1"
+    container 'quay.io/biocontainers/sambamba:1.0.1--h6f6fda4_1'
+
+    input:
+    tuple val(meta), path(bam)
+
+    output:
+    tuple val(meta), path("*.dedup.bam"), path("*.dedup.bai"), emit: dedup_bam
+    path "*.sambamba_markdup.log", emit: metrics
+
+    script:
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
+    """
+    sambamba markdup -t ${task.cpus} $bam ${unitId}.dedup.bam 2> ${unitId}.sambamba_markdup.log
+    sambamba index -t ${task.cpus} ${unitId}.dedup.bam ${unitId}.dedup.bai
+    """
+}
+
+process MARK_DUPLICATES_LIB_FASTDUP {
+    tag "${meta.unit_id ?: meta.library ?: meta.id}"
+    label 'mc_medium'
+    conda "bioconda::fastdup=1.0.0 bioconda::samtools=1.23.1"
+    container 'ghcr.io/idobar/fastdup:latest'
+
+    input:
+    tuple val(meta), path(bam)
+
+    output:
+    tuple val(meta), path("*.dedup.bam"), path("*.dedup.bai"), emit: dedup_bam
+    path "*.metrics.txt", emit: metrics
+
+    script:
+    def unitId = meta.unit_id ?: meta.library ?: meta.id
+    """
+    fastdup --input $bam --output ${unitId}.dedup.bam --metrics ${unitId}.metrics.txt --num-threads ${task.cpus}
+    samtools index -@ ${task.cpus} -o ${unitId}.dedup.bai ${unitId}.dedup.bam
+    """
+}
+
 process GATK_CALL_LIB {
     tag "${meta.unit_id ?: meta.library ?: meta.id}"
     label 'sc_medium'

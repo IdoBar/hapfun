@@ -3,12 +3,12 @@ include { BWA_ALIGN; BOWTIE2_ALIGN; SAMTOOLS_SORT_ALIGN } from '../modules/local
 include { DECOMPRESS_FASTA; SAMTOOLS_FAIDX; GATK_DICTIONARY; BWA_INDEX; BOWTIE2_INDEX } from '../modules/local/reference_prep'
 include { GFF_TO_BED } from '../modules/local/annotation_prep'
 include { FREEBAYES_SPLIT_REGIONS } from '../modules/local/genome_regions'
-include { SAMTOOLS_MERGE; MARK_DUPLICATES; MARK_DUPLICATES_BAMSORMADUP; QUALIMAP } from '../modules/local/bam_tools'
+include { SAMTOOLS_MERGE; MARK_DUPLICATES; MARK_DUPLICATES_BAMSORMADUP; MARK_DUPLICATES_SAMBAMBA; MARK_DUPLICATES_FASTDUP; QUALIMAP } from '../modules/local/bam_tools'
 include { FREEBAYES_POPULATION; FREEBAYES; GATK_HAPLOTYPECALLER; GATK_COMBINEGVCFS; GATK_GENOTYPEGVCFS } from '../modules/local/variant_callers'
 include { BCFTOOLS_MERGE; BCFTOOLS_CONCAT } from '../modules/local/vcf_tools'
-include { MULTIQC } from '../modules/local/multiqc'
+include { GENERATE_SOFTWARE_VERSIONS_MQC; MULTIQC } from '../modules/local/multiqc'
 include { POPGEN_ANALYSES } from '../modules/local/popgen'
-include { MARK_DUPLICATES_LIB; MARK_DUPLICATES_LIB_BAMSORMADUP; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
+include { MARK_DUPLICATES_LIB; MARK_DUPLICATES_LIB_BAMSORMADUP; MARK_DUPLICATES_LIB_SAMBAMBA; MARK_DUPLICATES_LIB_FASTDUP; GATK_CALL_LIB; FREEBAYES_CALL_LIB; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_RAW; VCF_MULTI_COMPARE as VCF_MULTI_COMPARE_FILTERED; VCF_DISCORDANCE_MQC } from '../modules/local/error_tools'
 include { VCF_FILTER as VCF_FILTER_LIB; VCF_FILTER as VCF_FILTER_FINAL } from '../modules/local/vcf_filter'
 include { BCFTOOLS_STATS as BCFTOOLS_STATS_RAW; BCFTOOLS_STATS as BCFTOOLS_STATS_FILTERED } from '../modules/local/vcf_tools'
 
@@ -18,7 +18,7 @@ workflow HAPFUN {
     def step_order = [qc: 1, alignment: 2, call: 3, filter: 4, multiqc: 5]
     def valid_start_steps = ['qc', 'alignment']
     def valid_stop_steps = ['qc', 'alignment', 'call', 'filter', 'multiqc']
-    def valid_markdup_tools = ['gatk', 'bamsormadup']
+    def valid_markdup_tools = ['gatk', 'bamsormadup', 'sambamba', 'fastdup']
 
     if (!valid_start_steps.contains(params.start_step)) {
         error "Invalid --start_step '${params.start_step}'. Supported values: ${valid_start_steps.join(', ')}"
@@ -82,7 +82,6 @@ workflow HAPFUN {
     // Stage MultiQC config and logo together so the relative logo path in the YAML resolves
     ch_multiqc_config = file(params.multiqc_config)
     ch_multiqc_logo   = file("$projectDir/assets/hapfun.png")
-    ch_multiqc_versions = Channel.value(file("$projectDir/assets/software_versions_mqc.yml"))
     ch_vcf_compare_script = Channel.value(file("$projectDir/bin/vcf_multi_compare.py"))
     ch_popgen_script = Channel.value(file("$projectDir/bin/popgen_analyses.py"))
 
@@ -175,6 +174,12 @@ workflow HAPFUN {
         if (params.markdup_tool == 'bamsormadup') {
             MARK_DUPLICATES_LIB_BAMSORMADUP(ch_multi_libs)
             ch_error_dedup_bam = MARK_DUPLICATES_LIB_BAMSORMADUP.out.dedup_bam
+        } else if (params.markdup_tool == 'sambamba') {
+            MARK_DUPLICATES_LIB_SAMBAMBA(ch_multi_libs)
+            ch_error_dedup_bam = MARK_DUPLICATES_LIB_SAMBAMBA.out.dedup_bam
+        } else if (params.markdup_tool == 'fastdup') {
+            MARK_DUPLICATES_LIB_FASTDUP(ch_multi_libs)
+            ch_error_dedup_bam = MARK_DUPLICATES_LIB_FASTDUP.out.dedup_bam
         } else {
             MARK_DUPLICATES_LIB(ch_multi_libs)
             ch_error_dedup_bam = MARK_DUPLICATES_LIB.out.dedup_bam
@@ -240,6 +245,14 @@ workflow HAPFUN {
         MARK_DUPLICATES_BAMSORMADUP(SAMTOOLS_MERGE.out.merged_bam)
         ch_dedup_bam_for_call = MARK_DUPLICATES_BAMSORMADUP.out.dedup_bam
         ch_dedup_metrics = MARK_DUPLICATES_BAMSORMADUP.out.metrics
+    } else if (params.markdup_tool == 'sambamba') {
+        MARK_DUPLICATES_SAMBAMBA(SAMTOOLS_MERGE.out.merged_bam)
+        ch_dedup_bam_for_call = MARK_DUPLICATES_SAMBAMBA.out.dedup_bam
+        ch_dedup_metrics = MARK_DUPLICATES_SAMBAMBA.out.metrics
+    } else if (params.markdup_tool == 'fastdup') {
+        MARK_DUPLICATES_FASTDUP(SAMTOOLS_MERGE.out.merged_bam)
+        ch_dedup_bam_for_call = MARK_DUPLICATES_FASTDUP.out.dedup_bam
+        ch_dedup_metrics = MARK_DUPLICATES_FASTDUP.out.metrics
     } else {
         MARK_DUPLICATES(SAMTOOLS_MERGE.out.merged_bam)
         ch_dedup_bam_for_call = MARK_DUPLICATES.out.dedup_bam
@@ -363,7 +376,16 @@ workflow HAPFUN {
     if (params.stop_at == 'popgen') { return }
     // --- FINAL STEP: MULTIQC ---
 
-    ch_multiqc_reports = ch_multiqc_reports.mix(ch_multiqc_versions)
+    GENERATE_SOFTWARE_VERSIONS_MQC(
+        Channel.value(params.trimmer),
+        Channel.value(params.aligner),
+        Channel.value(params.caller),
+        Channel.value(params.markdup_tool),
+        Channel.value(params.annotation),
+        Channel.value(params.popgen)
+    )
+
+    ch_multiqc_reports = ch_multiqc_reports.mix(GENERATE_SOFTWARE_VERSIONS_MQC.out.versions)
     
     // Pass config and logo so both are staged in the work directory
     MULTIQC(ch_multiqc_reports.collect(), ch_multiqc_config, ch_multiqc_logo)

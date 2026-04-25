@@ -42,6 +42,14 @@ Please cite the workflow framework and relevant software used in your analysis.
 
 > McKenna, A., Hanna, M., Banks, E., Sivachenko, A., Cibulskis, K., Kernytsky, A., ... DePristo, M. A. (2010). The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Research, 20(9), 1297-1303. doi:10.1101/gr.107524.110
 
+### [Sambamba](https://lomereiter.github.io/sambamba/)
+
+> Tarasov, A., Vilella, A. J., Cuppen, E., Nijman, I. J., & Prins, P. (2015). Sambamba: fast processing of NGS alignment formats. Bioinformatics, 31(12), 2032-2034. doi:10.1093/bioinformatics/btv098
+
+### [FastDup](https://github.com/zzhofict/FastDup)
+
+> Zhang, Z., Li, Y., Meng, K., Zhang, C., & Tan, G. (2025). FastDup: a scalable duplicate marking tool using speculation-and-test mechanism. Bioinformatics, 41(12), btaf633. doi:10.1093/bioinformatics/btaf633
+
 ### [biobambam2](https://gitlab.com/german.tischler/biobambam2)
 
 > Tischler, G., & Leonard, S. (2014). Biobambam: Tools for read pair collation based algorithms on BAM files. Source Code for Biology and Medicine, 9(1), 13. doi:10.1186/1751-0473-9-13

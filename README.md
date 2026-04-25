@@ -24,7 +24,7 @@ By default, **HapFun** performs the following steps:
 3. **Read Alignment**: `bwa-mem2` (default) or `bowtie2`.
 4. **BAM Processing**:
     * Merges multiple libraries belonging to the same sample (`samtools`).
-    * Marks optical/PCR duplicates (`bamsormadup` by default, with optional `GATK MarkDuplicates`).
+    * Marks optical/PCR duplicates (`bamsormadup` by default, with optional `GATK MarkDuplicates`, `sambamba`, or `FastDup`).
 5. **Alignment QC**: `Qualimap` (Supports optional `.gff`/`.bed` annotations for targeted region metrics).
 6. **Variant Calling**: `Freebayes` (Population mode default) or `GATK HaplotypeCaller`.
     * *Supports Freebayes population-level calling, or individual sample calling + merging.*
@@ -95,7 +95,7 @@ HapFun allows you to bypass expensive indexing steps by providing pre-built dire
 * `--trimmer`: `fastp` (default) or `trimmomatic`
 * `--aligner`: `bwa-mem2` (default) or `bowtie2`
 * `--caller`: `freebayes` (default) or `gatk`
-* `--markdup_tool`: `bamsormadup` (default) or `gatk`
+* `--markdup_tool`: `bamsormadup` (default), `gatk`, `sambamba`, or `fastdup`
 * `--freebayes_mode`: `population` (default) or `individual`
 * `--freebayes_chunk_size`: Chunk size passed to `fasta_generate_regions.py` for splitting genomic regions in Freebayes population-mode. (Default: `500000`).
 * `--error_estimate`: `false` (default) or `true`
@@ -151,6 +151,8 @@ HapFun utilizes the following open-source tools via [Bioconda](https://bioconda.
 * [Samtools](http://www.htslib.org/) [1.23.1] / [BCFtools](http://samtools.github.io/bcftools/) [1.23.1]
 * [GATK4](https://gatk.broadinstitute.org/hc/en-us) [4.6.2.0]
 * [biobambam2 (bamsormadup)](https://gitlab.com/german.tischler/biobambam2) [2.0.185]
+* [Sambamba](https://lomereiter.github.io/sambamba/) [1.0.1]
+* [FastDup](https://github.com/zzhofict/FastDup) [1.0.0]
 * [Freebayes](https://github.com/freebayes/freebayes) [1.3.10]
 * [BEDOPS](https://bedops.readthedocs.io/en/latest/) [2.4.42] (gff2bed)
 * [Qualimap](http://qualimap.conesalab.org/) [2.3]

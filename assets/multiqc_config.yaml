@@ -13,6 +13,7 @@ module_order:
   - fastqc
   - trimmomatic
   - picard
+  - sambamba
   - qualimap
   - bcftools
 

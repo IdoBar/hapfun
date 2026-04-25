@@ -1,59 +1,47 @@
 id: software_versions
 section_name: "Software Versions"
-description: "Tool versions used by HapFun for this run."
+description: "Tool versions used by HapFun."
 plot_type: table
 pconfig:
   id: hapfun_software_versions_table
   title: "HapFun: Software Versions"
+  col1_header: "Tool"
   sort_rows: false
 headers:
-  tool:
-    title: "Tool"
   version:
     title: "Version"
 data:
   fastp:
-    tool: "Fastp"
     version: "1.3.0"
   fastqc:
-    tool: "FastQC"
     version: "0.12.1"
   trimmomatic:
-    tool: "Trimmomatic"
     version: "0.40"
   bwa_mem2:
-    tool: "BWA-mem2"
     version: "2.3"
   bowtie2:
-    tool: "Bowtie2"
     version: "2.5.5"
   samtools:
-    tool: "Samtools"
     version: "1.23.1"
   bcftools:
-    tool: "BCFtools"
     version: "1.23.1"
   gatk4:
-    tool: "GATK4"
     version: "4.6.2.0"
   biobambam2:
-    tool: "biobambam2 (bamsormadup)"
     version: "2.0.185"
+  sambamba:
+    version: "1.0.1"
+  fastdup:
+    version: "1.0.0"
   freebayes:
-    tool: "Freebayes"
     version: "1.3.10"
   bedops:
-    tool: "BEDOPS"
     version: "2.4.42"
   qualimap:
-    tool: "Qualimap"
     version: "2.3"
   multiqc:
-    tool: "MultiQC"
     version: "1.33"
   iqtree:
-    tool: "IQ-TREE"
     version: "2.4.0"
   mrbayes:
-    tool: "MrBayes"
     version: "3.2.7"
