@@ -24,7 +24,7 @@ process FREEBAYES {
 
 process FREEBAYES_POPULATION {
     tag "$meta.id"
-    label 'mc_xlarge'
+    label 'mc_long'
     conda "bioconda::freebayes=1.3.10"
     container 'quay.io/biocontainers/freebayes:1.3.10--hbefcdb2_0'
     input:
@@ -62,6 +62,8 @@ process GATK_HAPLOTYPECALLER {
     script:
     def args = task.ext.args ?: ''
     def mem_per_job = Math.max(1, task.memory.toGiga().intdiv(task.cpus))
+    def maxInnerThreads = (params.caller_inner_threads ?: 4) as Integer
+    def threads = Math.max(1, Math.min((task.cpus ?: 1) as Integer, maxInnerThreads))
     """
     export NF_REF="${ref}"
     export NF_BAM="${bam}"
@@ -69,7 +71,7 @@ process GATK_HAPLOTYPECALLER {
     export NF_ARGS="${args}"
     export NF_MEM="${mem_per_job}"
 
-    cut -f1 ${ref_idx} | xargs -P ${task.cpus} -I {} sh -c '
+    cut -f1 ${ref_idx} | xargs -P ${threads} -I {} sh -c '
         gatk --java-options "-Xmx\${NF_MEM}g" HaplotypeCaller \
             -R "\${NF_REF}" -I "\${NF_BAM}" -L "{}" -O "{}.g.vcf.gz" \
             -ERC GVCF -ploidy "\${NF_PLOIDY}" --native-pair-hmm-threads 1 \${NF_ARGS} &&

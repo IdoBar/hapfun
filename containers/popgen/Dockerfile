@@ -8,6 +8,12 @@ FROM mambaorg/micromamba:1.5.10
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 ENV PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        procps \
+    && rm -rf /var/lib/apt/lists/*
+USER mambauser
+
 LABEL org.opencontainers.image.source="https://github.com/IdoBar/hapfun" \
       org.opencontainers.image.title="hapfun-popgen" \
       org.opencontainers.image.description="HapFun POPGEN_ANALYSES runtime with IQ-TREE and MrBayes" \
@@ -26,4 +32,5 @@ RUN micromamba install -y -n base -c conda-forge -c bioconda \
 RUN python --version \
     && python -c "import numpy, pandas, pysam; print('python-stack-ok')" \
     && (command -v iqtree2 || command -v iqtree) \
-    && command -v mb
+    && command -v mb \
+    && command -v ps
